@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#164d3b">
+  <meta name="description" content="提炼深度学习、机器人基础、大模型与机器人学习的核心知识。按方向解释概念、机制与研究进展。">
+  <title>Learning Atlas — Deep Learning & Robot Learning</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./handbook.css">
+  <link rel="stylesheet" href="./knowledge.css">
+  <link rel="stylesheet" href="./visuals.css">
+  <link rel="stylesheet" href="./research-notes.css">
+  <link rel="stylesheet" href="./robot-papers.css">
+  <link rel="stylesheet" href="./agent-learning.css">
+  <script src="./data.js" defer></script>
+  <script src="./guide-data.js" defer></script>
+  <script src="./robot-paper-data.js" defer></script>
+  <script src="./core.js" defer></script>
+  <script src="./visuals.js" defer></script>
+  <script src="./research-notes.js" defer></script>
+  <script src="./robot-papers.js" defer></script>
+  <script src="./agent-learning.js" defer></script>
+  <script src="./handbook.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<header class="header">
+  <a href="#home" class="brand" aria-label="Learning Atlas 首页"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 23V9l9-5 9 5v14l-9 5Z M7 9l9 5 9-5 M16 14v14 M7 16l9 5 9-5"/></svg></span><span>Learning Atlas<small>DEEP × ROBOT LEARNING</small></span></a>
+  <nav aria-label="主导航"><a href="#home" data-nav="home">概览</a><a href="#guides" data-nav="guides">知识库</a><a href="#guides?topic=llm" data-nav="llm">大模型</a><a href="#robot-papers" data-nav="robot-papers">机器人论文</a><a href="#frontier" data-nav="frontier">前沿观察<span class="nav-dot"></span></a></nav>
+  <button class="collection-button" data-action="collection"><span aria-hidden="true">☆</span> 我的书签 <span id="saved-count">0</span></button>
+</header>
+<main id="main" tabindex="-1">
+<section id="page-home" class="page">
+  <div class="hero wrap">
+    <div class="hero-copy"><div class="eyebrow"><span class="status-dot"></span> A KNOWLEDGE ATLAS OF INTELLIGENCE</div>
+      <h1>深度学习与<br><span class="serif-accent">机器人智能。</span></h1>
+      <p class="hero-description">核心概念、方法关系与研究进展。<br>从一个方向进入，把知识真正理解清楚。</p>
+      <form id="hero-search" class="hero-search" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="hero-query" aria-label="搜索核心知识" placeholder="注意力 / 多模态 / 逆运动学 / VLA…" autocomplete="off"><button type="submit" aria-label="搜索">↗</button></form>
+      <div class="hot-tags"><span>从这里开始</span><button data-search="IK">逆运动学</button><button data-search="标定">标定</button><button data-search="推理">大模型推理 ↗</button></div>
+      <div class="hero-stats"><span><strong id="resource-total">6</strong> 大模型方向</span><i></i><span><strong id="guide-total">—</strong> 个核心主题</span><i></i><span class="source-label">中文讲解 · 概念关联</span></div>
+    </div>
+    <div class="hero-art" aria-label="学习图景：从感知、表征、决策到行动">
+      <div class="art-top"><span>LEARNING → DOING</span><span>FIG. 01</span></div>
+      <svg class="atlas-art" viewBox="0 0 500 370" role="img" aria-labelledby="art-title">
+        <title id="art-title">神经网络将感知转化为机器人行动的示意图</title>
+        <defs><pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#abc0ab" opacity=".45"/></pattern><linearGradient id="arm" x1="0" x2="1"><stop stop-color="#e7ecde"/><stop offset="1" stop-color="#b3c9b1"/></linearGradient></defs>
+        <rect width="500" height="370" fill="url(#dots)"/>
+        <g stroke="#a0b59f" stroke-width="1" fill="none"><ellipse cx="284" cy="288" rx="172" ry="62" transform="rotate(-12 284 288)"/><ellipse cx="284" cy="288" rx="128" ry="41" transform="rotate(-12 284 288)"/><path d="M103 319 416 242 M149 247l244 76" stroke-dasharray="4 7"/></g>
+        <g stroke="#719775" opacity=".5"><path d="M42 82 102 54 151 87 102 118 42 82 102 54 102 118 151 87 151 149 102 118 42 146 42 82M42 146 102 183 151 149 102 118 102 183M102 54 207 112M151 87 207 112M151 149 207 112M102 183 207 112"/></g>
+        <g fill="#376b4b"><circle cx="42" cy="82" r="6"/><circle cx="42" cy="146" r="6"/><circle cx="102" cy="54" r="6"/><circle cx="102" cy="118" r="8"/><circle cx="102" cy="183" r="6"/><circle cx="151" cy="87" r="6"/><circle cx="151" cy="149" r="6"/></g>
+        <path d="M215 112c83-62 157 10 136 61" stroke="#789677" fill="none" stroke-dasharray="5 5"/><path d="m345 164 6 10 10-8" stroke="#789677" fill="none"/>
+        <ellipse cx="295" cy="293" rx="54" ry="20" fill="#a8bca2" opacity=".35"/>
+        <g stroke="#365c44" stroke-width="2" stroke-linejoin="round"><path d="m255 278 43-19 45 18-43 22Z" fill="#c4d2bb"/><path d="M255 278v12l45 22 43-22v-13l-43 22Z" fill="#adc4aa"/><path d="M283 274v-49l26-6 14 48-24 12Z" fill="url(#arm)"/><path d="m291 230-57-71 28-21 55 78Z" fill="url(#arm)"/><path d="m239 151 42-70 28 17-46 71Z" fill="url(#arm)"/><path d="m294 84 63 29-8 26-66-34Z" fill="url(#arm)"/><circle cx="297" cy="225" r="15" fill="#d7dfca"/><circle cx="297" cy="225" r="6" fill="#436f4e"/><circle cx="251" cy="154" r="18" fill="#d7dfca"/><circle cx="251" cy="154" r="8" fill="#436f4e"/><circle cx="293" cy="96" r="15" fill="#d7dfca"/><circle cx="293" cy="96" r="6" fill="#436f4e"/><path d="m350 118 18 9-5 16-18-9Z" fill="#527959"/><path d="m363 137 16 13-3 22m-20-37-7 20 12 19" fill="none" stroke-width="7"/></g>
+        <g stroke="#b36f3f" stroke-width="1.5"><path d="m362 210 25-14 25 14-25 15Z" fill="#e5b578"/><path d="M362 210v27l25 15v-27Z" fill="#d09a60"/><path d="M387 225v27l25-15v-27Z" fill="#ecc997"/></g>
+        <path d="M374 182v14" stroke="#b36f3f" stroke-dasharray="3 3"/><circle cx="207" cy="112" r="10" fill="#e8b77b" stroke="#aa7849"/>
+        <g fill="#56745a" font-size="10" font-family="monospace" letter-spacing="2"><text x="30" y="227">REPRESENTATION</text><text x="340" y="68">ACTION</text><text x="162" y="351">OBSERVE. LEARN. INTERACT.</text></g>
+      </svg>
+      <div class="art-bottom"><span><i></i> 感知</span><b>→</b><span><i></i> 表征</span><b>→</b><span><i></i> 决策</span><b>→</b><span><i></i> 行动</span></div>
+    </div>
+  </div>
+  <div class="edition-band"><div class="wrap"><span><span class="status-dot"></span> 本期精选 <b>2026.10.14</b></span><a href="#frontier">从动作生成，到记忆、推理与真实世界反馈 <span>↗</span></a></div></div>
+  <div class="wrap section-space"><div class="section-heading"><div><div class="eyebrow muted">EXPLORE THE KNOWLEDGE</div><h2>先找到你关心的知识方向。</h2><p>理解定义、抓住机制，再看它和其他知识的联系。</p></div><a href="#guides" class="text-link">进入知识库 ↗</a></div><div id="home-topics" class="topic-grid"></div><div id="home-guides" class="home-guide-grid"></div></div>
+  <div class="wrap section-space section-rule"><div class="section-heading"><div><div class="eyebrow muted">FOUNDATION MODELS · SIX DIRECTIONS</div><h2>大模型，分方向理解。</h2><p>语言建模、推理、多模态、Agent 与系统之间怎样连接。</p></div><a href="#guides?topic=llm" class="text-link">大模型知识总览 ↗</a></div><div id="home-llm-directions" class="direction-grid"></div></div>
+  <div class="wrap section-space section-rule robot-papers-home"><div class="section-heading"><div><div class="eyebrow muted">ROBOTICS · PAPER READINGS</div><h2>机器人论文，拆开读懂。</h2><p>从标定、动作学习到全身控制与机器人网球。<span id="robot-paper-total"></span> 篇站内精读，沿数据流看清模型如何连接真实机器人。</p></div><a href="#robot-papers" class="text-link">精读与研究脉络 ↗</a></div><div id="home-robot-papers" class="robot-paper-grid"></div></div>
+  <div class="frontier-home section-space"><div class="wrap"><div class="section-heading"><div><div class="eyebrow">AT THE FRONTIER</div><h2>前沿，值得读懂。</h2><p>读懂技术进展，连接基础知识与研究问题。</p></div><a href="#frontier" class="text-link">阅读全部观察 ↗</a></div><div id="home-frontier" class="news-grid"></div></div></div>
+  <div class="wrap editor-note"><span class="note-glyph">✳</span><div><h3>把知识的来龙去脉讲清楚。</h3><p>从教材与论文中提炼核心知识，用数据流图讲清输入和输出，配合论文原图与中文读图说明。公式和推导可以按需展开。</p></div><a href="#about" class="text-link">了解筛选标准 ↗</a></div>
+</section>
+<section id="page-library" class="page wrap inner-page" hidden>
+  <div class="page-heading"><div class="eyebrow muted">THE KNOWLEDGE SHELF</div><h1>原始资料索引</h1><p>正文引用的课程、论文与实现。<a href="#guides" class="text-link">进入核心知识讲解 →</a></p></div>
+  <div class="library-layout"><aside class="filters" aria-label="资料筛选"><div class="filter-title">学习领域</div><div id="category-filters"></div><label for="level-filter">内容深度</label><select id="level-filter"><option value="all">全部深度</option><option>入门</option><option>进阶</option><option>研究</option></select><label for="type-filter">资料类型</label><select id="type-filter"><option value="all">全部类型</option></select><label for="language-filter">资料语言</label><select id="language-filter"><option value="all">全部语言</option><option value="zh">包含中文</option><option value="en">英文</option></select><label class="check-row"><input type="checkbox" id="frontier-filter"> 只看前沿专题</label><label class="check-row"><input type="checkbox" id="saved-filter"> 只看我的书签</label><button id="reset-filters" class="reset-button">重置筛选 ↺</button><p class="local-note">书签保存在当前浏览器，可导出备份。</p><div class="bookmark-tools"><button id="export-bookmarks">导出书签 ↓</button><button id="import-bookmarks">导入书签 ↑</button><input id="import-file" type="file" accept="application/json,.json" hidden></div></aside>
+  <div class="library-main"><div class="library-toolbar"><div class="search-field"><span aria-hidden="true">⌕</span><input id="library-query" type="search" aria-label="搜索资料库" placeholder="搜索标题、主题、机构或关键词…"></div><select id="sort-filter" aria-label="排序"><option value="recommended">精选顺序</option><option value="newest">年份从新到旧</option></select></div><div class="results-meta"><span id="result-count" role="status" aria-live="polite"></span><span>官方来源 · 附中文导读</span></div><div id="resource-results" class="resource-grid library-grid"></div></div></div>
+</section>
+<section id="page-guides" class="page wrap inner-page" hidden><div class="page-heading"><div class="eyebrow muted">THE KNOWLEDGE ATLAS</div><h1 id="knowledge-index-title">把核心知识串起来。</h1><p id="knowledge-index-intro">按方向理解概念、机制与联系。</p></div><div id="guide-topic-tabs" class="topic-tabs" aria-label="知识领域"></div><div class="guide-toolbar"><div class="search-field"><span aria-hidden="true">⌕</span><input id="guide-query" type="search" aria-label="搜索核心知识" placeholder="搜索知识概念：注意力、多模态、IK、标定…"></div><select id="guide-track-filter" aria-label="内容方向"><option value="all">全部内容</option><option value="foundation">基础概念</option><option value="frontier">研究机制</option></select></div><div class="knowledge-layout"><aside id="guide-directions" class="knowledge-directions" hidden><div class="toc-title">选择方向</div><div id="guide-direction-tabs"></div></aside><div class="knowledge-main"><div id="guide-count" class="guide-results-meta" role="status" aria-live="polite"></div><div id="guide-results"></div></div></div></section>
+<section id="page-guide" class="page wrap" hidden><div id="guide-reader" class="guide-reader"></div></section>
+<section id="page-frontier" class="page wrap inner-page" hidden><div class="page-heading"><div class="eyebrow muted">RESEARCH FIELD NOTES · OCT 2026</div><h1>站在基础上，看向前沿。</h1><p>跟踪推理、Agent、模型架构、多模态与机器人策略的新进展。</p></div><div class="snapshot-note"><span class="status-dot"></span> 2026 年 10 月 14 日 · 研究精选与技术导读</div><div class="topic-tabs frontier-filters" aria-label="前沿领域"><button data-news-topic="all" class="active">全部</button><button data-news-topic="llm">大模型</button><button data-news-topic="embodied">具身智能</button></div><div id="frontier-articles"></div><div class="reading-lens"><div><span class="eyebrow muted">READ WITH A QUESTION</span><h2>读一篇 Robot Learning 论文，<br>带着这四个问题。</h2></div><ol><li><b>数据从哪里来？</b>机器人示范、人类视频、仿真数据，各自贡献多少？</li><li><b>泛化到哪里？</b>分别考察新物体、新场景、新任务与新机体。</li><li><b>究竟怎么评测？</b>看任务划分、样本量、失败案例与相同条件下的基线。</li><li><b>我能复现哪一部分？</b>论文、代码、权重、数据、硬件要求是否都可获取？</li></ol></div></section>
+<section id="page-robot-papers" class="page wrap inner-page" hidden>
+  <div class="robot-paper-heading"><div><div class="eyebrow muted">ROBOT LEARNING · FROM PAPER TO CONTROL</div><h1>读懂机器人论文，<br>也读懂它怎样行动。</h1><p>几何关系、动作表示、训练信号与执行接口共同决定机器人行为。沿四条研究线索理解方法变化，再展开每篇的原图、数据流和关键实验。</p></div><aside class="robot-reading-key"><h2>先抓住一篇论文的四个接口</h2><ol><li><b>看到了什么：</b>相机、点云、关节与历史。</li><li><b>学到了什么：</b>示范动作、奖励或几何约束。</li><li><b>输出了什么：</b>坐标变换、动作词元或连续动作块。</li><li><b>怎样执行：</b>控制器、反馈周期与重新规划。</li></ol></aside></div>
+  <section class="robot-control-focus" aria-labelledby="control-focus-heading"><div class="eyebrow muted">WHOLE-BODY CONTROL · 2025—2026</div><h2 id="control-focus-heading">从学会走路，到按时击球。</h2><p class="control-focus-intro">沿着人体动作、可复用技能和任务反馈，读懂近期人形运控。切换论文，比较训练与实机的两条数据流。</p><div id="robot-control-tabs" class="control-focus-tabs" role="group" aria-label="比较近期运控论文"></div><div id="robot-control-panel" aria-live="polite"></div></section>
+  <section class="robot-research-heading"><div class="eyebrow muted">RESEARCH THREADS</div><h2>研究如何推进，方法为何改变。</h2><p>按技术问题串联代表工作；日期采用原论文首次公开或正式出版时间。</p><div id="robot-research-lanes"></div></section>
+  <section aria-label="机器人论文精读索引"><div class="robot-research-heading"><div class="eyebrow muted">READ THE MECHANISM</div><h2>选择你想弄懂的问题。</h2></div><div id="robot-paper-tabs" class="topic-tabs" aria-label="论文方向"></div><div class="robot-paper-controls"><div class="search-field"><span aria-hidden="true">⌕</span><input id="robot-paper-query" type="search" placeholder="论文名 / 动作块 / 点云 / PPO / 标定…" aria-label="搜索机器人论文"></div><select id="robot-paper-sort" aria-label="论文时间排序"><option value="newest">从近期研究读起</option><option value="oldest">沿发展顺序阅读</option></select></div><p id="robot-paper-count" class="guide-results-meta" role="status" aria-live="polite"></p><div id="robot-paper-results" class="robot-paper-grid"></div></section>
+</section>
+<section id="page-about" class="page wrap inner-page" hidden><div class="page-heading"><div class="eyebrow muted">OUR EDITORIAL PRINCIPLES</div><h1>关于 Learning Atlas</h1><p>连接深度学习基础、机器人学习实践与前沿研究。</p></div><div class="about-grid"><article><span>01 / 来源</span><h2>优先回到原始材料</h2><p>大学课程主页、作者教材、论文项目页、官方代码与文档优先。每条资料附来源机构、原始链接与整理日期。</p></article><article><span>02 / 价值</span><h2>经典与前沿各有位置</h2><p>基础材料重视清晰的解释与完整练习；前沿资料关注新的问题、方法和实验结果。</p></article><article><span>03 / 行动</span><h2>在站内展开讲解</h2><p>先沿数据流看清过程，再用短段落解释关键机制。论文原图配中文说明，交互图展示参数变化，公式与推导按需展开。</p></article><article><span>04 / 连接</span><h2>从基础通向研究</h2><p>围绕视觉表征、动作生成、强化学习与通用机器人策略组织专题，让新论文与已有知识建立联系。</p></article></div><div class="about-text"><h2>本期内容</h2><p><span id="about-content-count">2026-10-14 整理</span></p><p>正文提炼核心知识，来源定位到相关章节；按需展开案例、推导与研究原文。</p><h3>你的书签</h3><p>书签保存在当前浏览器。通过资料库的导出与导入功能，可以备份或迁移到其他设备。</p></div></section>
+</main>
+<footer class="footer"><div class="wrap"><a href="#home" class="footer-brand">Learning Atlas <span>DEEP × ROBOT LEARNING</span></a><p>理解原理 · 连接研究 · 动手实践</p><a href="#sources">原始资料 ↗</a><a href="#about">关于本站 ↗</a><span class="footer-date">CURATED 2026.10.14</span></div></footer>
+<dialog id="resource-dialog" aria-labelledby="dialog-title"><button class="dialog-close" aria-label="关闭导读">×</button><div id="dialog-content"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="paper-dialog" class="paper-dialog" aria-labelledby="paper-dialog-title"><div class="paper-dialog-header"><h2 id="paper-dialog-title">论文原图</h2><button type="button" data-paper-close aria-label="关闭原图">×</button></div><p class="zoom-hint">拖动滚动条查看细节，或按 Esc 关闭。</p><div class="figure-zoom-viewport"><img id="paper-dialog-image" alt=""></div><a id="paper-dialog-source" href="#" target="_blank" rel="noopener noreferrer"></a></dialog>
+<noscript><p class="wrap">请启用 JavaScript，以浏览资料、搜索和使用知识库。</p></noscript>
+</body>
+</html>

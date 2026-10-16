@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="400" viewBox="0 0 840 400" role="img">
+<title>共享输入宽度，保留各模态的可见范围</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#35533c"/></marker><marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#47768a"/></marker><marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#b77b38"/></marker></defs>
+<rect width="840" height="400" rx="18" fill="#f5f8f3"/>
+<text x="30" y="38" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="22" font-weight="600" fill="#35533c" text-anchor="start">共享输入宽度，保留各模态的可见范围</text>
+<text x="810" y="37" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">块因果掩码示意</text>
+<rect x="30" y="73" width="358" height="259" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="46" y="101" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">一条图文混合序列</text>
+<rect x="50" y="118" width="61" height="21" rx="3" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="80" y="134" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#35533c" text-anchor="middle">文1</text>
+<rect x="138" y="118" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="177" y="118" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="216" y="118" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="255" y="118" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="294" y="118" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="50" y="140" width="61" height="21" rx="3" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="80" y="156" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#35533c" text-anchor="middle">文2</text>
+<rect x="138" y="140" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="177" y="140" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="216" y="140" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="255" y="140" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="294" y="140" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="50" y="162" width="61" height="21" rx="3" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="80" y="178" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#47768a" text-anchor="middle">图1</text>
+<rect x="138" y="162" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="177" y="162" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="216" y="162" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="255" y="162" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="294" y="162" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="50" y="184" width="61" height="21" rx="3" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="80" y="200" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#47768a" text-anchor="middle">图2</text>
+<rect x="138" y="184" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="177" y="184" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="216" y="184" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="255" y="184" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="294" y="184" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="50" y="206" width="61" height="21" rx="3" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="80" y="222" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#47768a" text-anchor="middle">图3</text>
+<rect x="138" y="206" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="177" y="206" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="216" y="206" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="255" y="206" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="294" y="206" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="50" y="228" width="61" height="21" rx="3" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="80" y="244" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#47768a" text-anchor="middle">图4</text>
+<rect x="138" y="228" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="177" y="228" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="216" y="228" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="255" y="228" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="294" y="228" width="34" height="21" rx="2" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<rect x="50" y="250" width="61" height="21" rx="3" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="80" y="266" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#35533c" text-anchor="middle">文3</text>
+<rect x="138" y="250" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="177" y="250" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="216" y="250" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="255" y="250" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="294" y="250" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="50" y="272" width="61" height="21" rx="3" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="80" y="288" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#35533c" text-anchor="middle">文4</text>
+<rect x="138" y="272" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="177" y="272" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="216" y="272" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="255" y="272" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="294" y="272" width="34" height="21" rx="2" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="221" y="322" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#35533c" text-anchor="middle">每行都映射到宽度 d</text>
+<text x="589" y="91" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">深色 = 允许读取</text>
+<text x="515" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">文1</text>
+<text x="542" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">文2</text>
+<text x="569" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">图1</text>
+<text x="596" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">图2</text>
+<text x="623" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">图3</text>
+<text x="650" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">图4</text>
+<text x="677" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">文3</text>
+<text x="704" y="112" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="middle">文4</text>
+<text x="494" y="138" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">文1</text>
+<rect x="503" y="119" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="119" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="165" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">文2</text>
+<rect x="503" y="146" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="146" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="146" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="146" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="146" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="146" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="146" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="146" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="192" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">图1</text>
+<rect x="503" y="173" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="173" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="173" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="173" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="173" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="173" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="173" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="173" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="219" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">图2</text>
+<rect x="503" y="200" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="200" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="200" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="200" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="200" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="200" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="200" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="200" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="246" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">图3</text>
+<rect x="503" y="227" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="227" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="227" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="227" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="227" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="227" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="227" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="227" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="273" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">图4</text>
+<rect x="503" y="254" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="254" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="254" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="254" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="254" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="254" width="25" height="25" rx="2" fill="#47768a" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="254" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="254" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="300" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">文3</text>
+<rect x="503" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="281" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="281" width="25" height="25" rx="2" fill="#e8ece6" stroke="#ffffff" stroke-width="1"/>
+<text x="494" y="327" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">文4</text>
+<rect x="503" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="530" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="557" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="584" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="611" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="638" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="665" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<rect x="692" y="308" width="25" height="25" rx="2" fill="#35533c" stroke="#ffffff" stroke-width="1"/>
+<line x1="30" y1="354" x2="810" y2="354" stroke="#d7e1d4" stroke-width="2"/>
+<text x="30" y="380" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#637265" text-anchor="start">同幅图像的 4 个块双向可见；整幅图像与文字块之间仍遵守先后顺序。</text>
+</svg>

@@ -1,0 +1,635 @@
+{
+  "checked": "2026-10-14",
+  "tracks": [
+    {
+      "id": "geometry",
+      "kicker": "MEASURE → TRANSFORM",
+      "title": "几何与标定",
+      "description": "先建立像素、相机与机器人之间可计算的空间关系。",
+      "milestones": [
+        "tsai-lenz",
+        "zhang-calibration"
+      ]
+    },
+    {
+      "id": "action",
+      "kicker": "DEMONSTRATE → ACT",
+      "title": "模仿与动作生成",
+      "description": "从覆盖偏离状态，到联合生成连续动作，再让三维几何参与控制。",
+      "milestones": [
+        "dagger",
+        "diffusion-policy",
+        "act",
+        "dp3"
+      ]
+    },
+    {
+      "id": "generalist",
+      "kicker": "SHARE → GENERALIZE",
+      "title": "通用策略与记忆",
+      "description": "跨机器人共享数据和模型，逐步加入连续动作、语义层次与历史上下文。",
+      "milestones": [
+        "rtx",
+        "octo",
+        "pi0",
+        "mem",
+        "pi07"
+      ]
+    },
+    {
+      "id": "control",
+      "kicker": "INTERACT → ADAPT",
+      "title": "全身控制与运动技能",
+      "description": "从身体适配到通用动作跟踪，再到来球驱动的全身协调与时机控制。",
+      "milestones": [
+        "rma",
+        "sonic",
+        "latent",
+        "adapt",
+        "athlete"
+      ]
+    }
+  ],
+  "papers": [
+    {
+      "id": "dagger",
+      "guideId": "action-policy-handbook",
+      "lessonId": "dagger",
+      "date": "2010-11",
+      "year": 2010,
+      "track": "action",
+      "title": "DAgger · 把纠正数据放回训练集",
+      "question": "策略偏离示范后，应该从哪里获得下一步的正确动作？",
+      "change": "让策略访问状态，再由专家标注并聚合数据，训练分布随策略一起更新。",
+      "detail": "读懂专家执行概率 β、专家标签与累计数据集，理解行为克隆的分布偏移。",
+      "prerequisites": [
+        "行为克隆",
+        "监督学习",
+        "闭环控制"
+      ],
+      "paperUrl": "https://arxiv.org/abs/1011.0686",
+      "codeUrl": "https://imitation.readthedocs.io/en/stable/algorithms/dagger.html"
+    },
+    {
+      "id": "diffusion-policy",
+      "guideId": "action-policy-handbook",
+      "lessonId": "diffusion-policy",
+      "date": "2023-03",
+      "year": 2023,
+      "track": "action",
+      "title": "Diffusion Policy · 生成多种连续动作路线",
+      "question": "同一场景有多条正确路线，如何生成一段连贯的动作？",
+      "change": "把动作序列建模为条件扩散分布，并通过滚动时域控制持续接入新观测。",
+      "detail": "区分扩散时间与执行时间，拆解观测长度 Tₒ、预测长度 Tₚ、执行长度 Tₐ。",
+      "prerequisites": [
+        "行为克隆",
+        "条件生成",
+        "动作归一化"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2303.04137",
+      "codeUrl": "https://github.com/real-stanford/diffusion_policy",
+      "figureId": "diffusion-policy"
+    },
+    {
+      "id": "act",
+      "guideId": "action-policy-handbook",
+      "lessonId": "act",
+      "date": "2023-04",
+      "year": 2023,
+      "track": "action",
+      "title": "ACT · 动作块与时序集成",
+      "question": "双臂精细操作怎样兼顾连续动作、示范变化与及时反馈？",
+      "change": "用 CVAE Transformer 生成关节动作块，并合并指向同一执行时刻的重叠预测。",
+      "detail": "从 4 路图像与 14 维关节读到 k×14 动作块，再看 L1＋KL 和执行缓冲。",
+      "prerequisites": [
+        "关节目标控制",
+        "Transformer",
+        "条件变分自编码器"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2304.13705",
+      "codeUrl": "https://github.com/tonyzhaozh/act",
+      "figureId": "act"
+    },
+    {
+      "id": "dp3",
+      "guideId": "action-policy-handbook",
+      "lessonId": "dp3",
+      "date": "2024-03",
+      "year": 2024,
+      "track": "action",
+      "title": "DP3 · 用紧凑点云表达空间",
+      "question": "如何让动作策略直接利用物体与机器人的三维关系？",
+      "change": "用裁剪、采样后的单视角点云生成紧凑条件，再驱动动作扩散。",
+      "detail": "追踪相机坐标到 64 维几何特征，读清 sample prediction 和动作窗口对齐。",
+      "prerequisites": [
+        "相机内外参",
+        "点云",
+        "Diffusion Policy"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2403.03954",
+      "codeUrl": "https://github.com/YanjieZe/3D-Diffusion-Policy",
+      "figureId": "dp3"
+    },
+    {
+      "id": "zhang-calibration",
+      "guideId": "camera-calibration",
+      "lessonId": "zhang-calibration",
+      "date": "2000-11",
+      "year": 2000,
+      "track": "geometry",
+      "title": "Zhang 相机标定",
+      "question": "用已知平板和未知拍摄姿态，怎样恢复内参与畸变？",
+      "change": "从多视图单应约束求初值，再联合优化所有角点重投影误差。",
+      "detail": "区分板坐标、像素测量与待求参数，解释倾角、板面平整度和 0.335 像素 RMS。",
+      "prerequisites": [
+        "针孔成像",
+        "齐次坐标",
+        "最小二乘"
+      ],
+      "paperUrl": "https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr98-71.pdf"
+    },
+    {
+      "id": "tsai-lenz",
+      "guideId": "hand-eye-calibration",
+      "lessonId": "tsai-lenz",
+      "date": "1989-06",
+      "year": 1989,
+      "track": "geometry",
+      "title": "Tsai–Lenz 手眼标定",
+      "question": "怎样把相机测量转换到机器人末端与基座？",
+      "change": "从固定标定板的闭环消去世界位姿，分两阶段求相机与末端的刚性关系。",
+      "detail": "明确 Gᵢ、Cᵢ、X 的方向，推导 AX=XB，并解释转轴分布为何影响精度。",
+      "prerequisites": [
+        "刚体变换",
+        "正运动学",
+        "相机外参"
+      ],
+      "paperUrl": "https://kmlee.gatech.edu/me6406/handeye.pdf"
+    },
+    {
+      "id": "rma",
+      "guideId": "robot-reinforcement",
+      "lessonId": "rma",
+      "date": "2021-07",
+      "year": 2021,
+      "track": "control",
+      "title": "RMA · Rapid Motor Adaptation",
+      "question": "负载和地面变化时，机器人怎样从身体反馈迅速调整步态？",
+      "change": "PPO 学会利用环境表示；历史适配模块从最近 0.5 秒动作后果中估计该表示。",
+      "detail": "拆解特权训练、时序监督、10 Hz 适配与 100 Hz 控制，以及去掉适配的消融。",
+      "prerequisites": [
+        "PPO",
+        "本体感知",
+        "PD 控制"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2107.04034",
+      "figureId": "rma"
+    },
+    {
+      "id": "walk-minutes",
+      "guideId": "robot-reinforcement",
+      "lessonId": "walk-minutes",
+      "date": "2021-09",
+      "year": 2021,
+      "track": "control",
+      "title": "Learning to Walk in Minutes",
+      "question": "怎样把机器人 PPO 的训练时间压到分钟，同时保持策略质量？",
+      "change": "全 GPU 物理与学习管线，结合批量/轨迹长度设计、超时 bootstrap 和自动地形难度。",
+      "detail": "从 4096×24 的采样张量解释 PPO 更新，连接地形观测、关节目标与实机执行器。",
+      "prerequisites": [
+        "PPO",
+        "GAE",
+        "Sim-to-Real"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2109.11978",
+      "codeUrl": "https://github.com/leggedrobotics/legged_gym",
+      "figureId": "walk-minutes"
+    },
+    {
+      "id": "rtx",
+      "guideId": "vla-handbook",
+      "lessonId": "rtx",
+      "date": "2023-10",
+      "year": 2023,
+      "track": "generalist",
+      "title": "Open X-Embodiment / RT-X",
+      "question": "不同机器人能否共享训练经验？",
+      "change": "统一轨迹格式与动作接口，比较单域训练和跨机器人混合训练。",
+      "detail": "从数据层理解后续 Octo 与 OpenVLA：共同格式、动作归一化和采样配比决定模型看到什么。",
+      "prerequisites": [
+        "模仿学习",
+        "末端动作",
+        "数据归一化"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2310.08864",
+      "codeUrl": "https://github.com/google-deepmind/open_x_embodiment",
+      "figureId": "rtx"
+    },
+    {
+      "id": "octo",
+      "guideId": "vla-handbook",
+      "lessonId": "octo",
+      "date": "2024-05",
+      "year": 2024,
+      "track": "generalist",
+      "title": "Octo",
+      "question": "传感器和动作空间改变后，怎样继续使用预训练策略？",
+      "change": "模块化 token 接口、readout 和扩散动作头，让新输入与输出可以接入共享策略。",
+      "detail": "沿 RT-X 的跨本体数据路线，进一步解决相机、传感器与控制接口的迁移。",
+      "prerequisites": [
+        "RT-X",
+        "注意力掩码",
+        "扩散策略"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2405.12213",
+      "codeUrl": "https://github.com/octo-models/octo",
+      "figureId": "octo"
+    },
+    {
+      "id": "grootn1",
+      "guideId": "vla-handbook",
+      "lessonId": "grootn1",
+      "date": "2025-03",
+      "year": 2025,
+      "track": "generalist",
+      "title": "GR00T N1",
+      "question": "如何结合 VLM、不同身体结构与多来源动作数据？",
+      "change": "VLM 特征连接流匹配 DiT，本体编码器处理状态与动作维度，视频通过潜在动作和逆动力学提供监督。",
+      "detail": "与 π0 的连续动作专家并列阅读：重点比较特征连接、本体接口及人类与合成视频的标签方式。",
+      "prerequisites": [
+        "视觉语言模型",
+        "流匹配",
+        "动作块"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2503.14734",
+      "codeUrl": "https://github.com/NVIDIA/Isaac-GR00T/releases/tag/n1-release",
+      "figureId": "grootn1"
+    },
+    {
+      "id": "pi07",
+      "guideId": "vla-handbook",
+      "lessonId": "pi07",
+      "date": "2026-04",
+      "year": 2026,
+      "track": "generalist",
+      "title": "π0.7",
+      "question": "不同质量的经验怎样进入通用策略，并在执行时选择期望行为？",
+      "change": "加入质量与速度元数据、视觉历史和生成子目标，在同一条件策略里组织多样经验。",
+      "detail": "接续 π0.5 的语义子任务与连续动作；把 π*0.6 的执行经验纳入训练，研究上下文条件与组合泛化。",
+      "prerequisites": [
+        "π0.5",
+        "条件生成",
+        "动作块执行"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2604.15483"
+    },
+    {
+      "id": "mem",
+      "guideId": "memory-world-handbook",
+      "lessonId": "mem",
+      "date": "2026-03",
+      "year": 2026,
+      "track": "generalist",
+      "title": "MEM · 多尺度具身记忆",
+      "question": "机器人怎样记住几分钟前的任务状态和几秒前的动作？",
+      "change": "语言摘要管理长期事件，压缩视频历史支持短期控制。",
+      "detail": "拆开高低层策略、记忆监督、因果时间注意力与异步动作块。",
+      "prerequisites": [
+        "部分可观测",
+        "VLA",
+        "时间注意力"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2603.03596",
+      "figureId": "mem"
+    },
+    {
+      "id": "openvla",
+      "guideId": "vla-handbook",
+      "lessonId": "openvla",
+      "date": "2024-06",
+      "year": 2024,
+      "track": "generalist",
+      "title": "OpenVLA",
+      "question": "视觉语言骨干怎样把机器人动作写成可预测的 token？",
+      "change": "双视觉编码器连接语言模型，用离散动作监督进行跨本体训练。",
+      "detail": "DINOv2 / SigLIP、256 档动作、目标数据集归一化与单步闭环。",
+      "prerequisites": [
+        "视觉语言模型",
+        "行为克隆",
+        "动作归一化"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2406.09246",
+      "figureId": "openvla"
+    },
+    {
+      "id": "pi0",
+      "guideId": "vla-handbook",
+      "lessonId": "pi0",
+      "date": "2024-10",
+      "year": 2024,
+      "track": "generalist",
+      "title": "π0",
+      "question": "语言模型特征怎样驱动高频连续机器人动作？",
+      "change": "预训练视觉语言骨干连接流匹配动作专家，共同生成动作块。",
+      "detail": "视觉、语言、本体状态与带噪动作如何交互，50 步预测与实际执行如何区分。",
+      "prerequisites": [
+        "流匹配",
+        "动作块",
+        "视觉语言模型"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2410.24164",
+      "figureId": "pi0"
+    },
+    {
+      "id": "pi05",
+      "guideId": "vla-handbook",
+      "lessonId": "pi05",
+      "date": "2025-04",
+      "year": 2025,
+      "track": "generalist",
+      "title": "π0.5",
+      "question": "把语义任务选择和连续动作放在一起，怎样支持新环境？",
+      "change": "混合跨机器人与非机器人数据，先预测语义子任务，再生成连续控制。",
+      "detail": "FAST 离散预训练、动作专家后训练、信息隔离与语义分层。",
+      "prerequisites": [
+        "π0",
+        "条件生成",
+        "子任务分解"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2504.16054"
+    },
+    {
+      "id": "ppo",
+      "guideId": "robot-reinforcement",
+      "lessonId": "ppo",
+      "section": "rl-lesson-ppo",
+      "date": "2017-07",
+      "year": 2017,
+      "track": "control",
+      "title": "PPO",
+      "question": "一批近期轨迹怎样支持多轮稳定的策略更新？",
+      "change": "优势决定更新方向，新旧概率比和裁剪目标控制单样本的更新激励。",
+      "detail": "六步训练流程、GAE、正负优势裁剪曲线及可调交互。",
+      "prerequisites": [
+        "策略梯度",
+        "价值函数",
+        "概率比"
+      ],
+      "paperUrl": "https://arxiv.org/abs/1707.06347",
+      "figureId": "ppo"
+    },
+    {
+      "id": "rlt",
+      "guideId": "robot-reinforcement",
+      "lessonId": "rlt",
+      "section": "rl-lesson-rlt",
+      "date": "2026-04",
+      "year": 2026,
+      "track": "control",
+      "title": "RLT · RL Token",
+      "question": "怎样在冻结 VLA 表征之上，用新交互改进精细操作？",
+      "change": "压缩 VLA 表征，连接离策略 actor-critic 与参考动作正则。",
+      "detail": "TD3 式双 Q、动作块回放、参考动作条件与 50 Hz 控制。",
+      "prerequisites": [
+        "VLA",
+        "TD3",
+        "经验回放"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2604.23073"
+    },
+    {
+      "id": "sonic",
+      "guideId": "robot-reinforcement",
+      "lessonId": "sonic",
+      "date": "2025-11",
+      "year": 2025,
+      "track": "control",
+      "title": "SONIC",
+      "question": "海量人体动作怎样变成可供遥操作和 VLA 共用的全身控制能力？",
+      "change": "统一动作 token 对接机器人、人体与混合输入；PPO 跟踪器把运动意图接到身体反馈。",
+      "detail": "按 2026.08 v4 解读规划器、运动编码、PPO 联合训练与 VLA 直接 token 控制，拆清实机闭环。",
+      "prerequisites": [
+        "PPO",
+        "运动重定向",
+        "本体感知"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2511.07820",
+      "codeUrl": "https://github.com/NVlabs/GR00T-WholeBodyControl",
+      "figureId": "sonic",
+      "firstSubmitted": "2025-11-11",
+      "updated": "2026-08-13"
+    },
+    {
+      "id": "latent",
+      "guideId": "robot-reinforcement",
+      "lessonId": "latent",
+      "date": "2026-03",
+      "firstSubmitted": "2026-03-13",
+      "year": 2026,
+      "track": "control",
+      "title": "LATENT",
+      "question": "银河通用与清华怎样让 G1 把动作片段组合成连续接球？",
+      "change": "用潜在技能组织身体协调，再以 PPO 选择技能并修正手腕。",
+      "detail": "读清动作先验、球状态输入、手腕分支与动捕反馈怎样接起来。",
+      "prerequisites": [
+        "PPO",
+        "动作追踪",
+        "PD 控制"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2603.12686",
+      "codeUrl": "https://github.com/GalaxyGeneralRobotics/LATENT",
+      "figureId": "latent"
+    },
+    {
+      "id": "adapt",
+      "guideId": "robot-reinforcement",
+      "lessonId": "adapt",
+      "date": "2026-08",
+      "firstSubmitted": "2026-08-20",
+      "year": 2026,
+      "track": "control",
+      "title": "AdaPT",
+      "question": "怎样让从视频学来的挥拍动作，跟上真实来球的时间？",
+      "change": "在规划与追踪之间增加速度适配，同时调整动作内容和推进节奏。",
+      "detail": "对照回球与发球，理解生成器、追踪器、残差修正和真实感知。",
+      "prerequisites": [
+        "动作追踪",
+        "分层控制",
+        "状态估计"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2608.20087",
+      "codeUrl": "https://github.com/noitom-robotics/AdaPT",
+      "figureId": "adapt"
+    },
+    {
+      "id": "athlete",
+      "guideId": "robot-reinforcement",
+      "lessonId": "athlete",
+      "date": "2026-10",
+      "year": 2026,
+      "track": "control",
+      "title": "ATHLETE",
+      "question": "普通跑动和挥拍片段，怎样变成会响应来球的全身策略？",
+      "change": "动作匹配扩展参考，再经时间自适应教师、DAgger 与 PPO 转成反应式控制。",
+      "detail": "拆开动作组合、击球时间、训练特权信息与实机观测；逐项理解击中和过网指标。",
+      "prerequisites": [
+        "动作相位",
+        "DAgger",
+        "PPO"
+      ],
+      "paperUrl": "https://arxiv.org/abs/2610.13572",
+      "figureId": "athlete",
+      "firstSubmitted": "2026-10-09"
+    }
+  ],
+  "controlFocus": [
+    {
+      "id": "sonic",
+      "tag": "通用运动跟踪",
+      "dateLabel": "2025.11 首稿 · 按 2026.08 v4 解读",
+      "question": "不同动作入口，怎样共用一种身体控制能力？",
+      "training": [
+        {
+          "label": "人体动作 → 机器人参考",
+          "text": "把身体结构和动作轨迹对齐"
+        },
+        {
+          "label": "编码与物理跟踪",
+          "text": "PPO 学执行，辅助目标组织表示"
+        },
+        {
+          "label": "共享运动 token",
+          "text": "多种指令共用控制解码器"
+        }
+      ],
+      "runtime": [
+        {
+          "label": "运动意图",
+          "text": "规划器 / 遥操作经编码；VLA 可直接给 token"
+        },
+        {
+          "label": "token + 身体反馈",
+          "text": "控制解码器读取运动意图与本体历史"
+        },
+        {
+          "label": "目标关节角 → PD",
+          "text": "生成力矩，驱动真实身体"
+        }
+      ],
+      "feedback": "关节与机身状态回到控制解码器，持续调整跟踪动作",
+      "meaning": "同一控制器连接人体动作、遥操作与 VLA。规划器负责把移动目标展开成参考轨迹。",
+      "ppo": "在仿真中优化运动跟踪；表示重建和对齐与 PPO 联合训练。"
+    },
+    {
+      "id": "latent",
+      "tag": "银河通用 · 网球",
+      "dateLabel": "2026.03 · 清华 / Galbot 等",
+      "question": "零散挥拍和步法，怎样变成按来球调整的技能？",
+      "training": [
+        {
+          "label": "分开的运动片段",
+          "text": "挥拍、侧移等动作提供协调先验"
+        },
+        {
+          "label": "跟踪 → 潜空间蒸馏",
+          "text": "解码器学会从技能表示生成身体动作"
+        },
+        {
+          "label": "PPO 学习接球",
+          "text": "按球状态选择技能，同时修正手腕"
+        }
+      ],
+      "runtime": [
+        {
+          "label": "球与身体状态",
+          "text": "外部动捕估计全局状态，本体传感提供关节反馈"
+        },
+        {
+          "label": "技能 z + 手腕修正",
+          "text": "高层选动作，低层解码全身关节目标"
+        },
+        {
+          "label": "PD 驱动挥拍",
+          "text": "步法、躯干与球拍共同完成接触"
+        }
+      ],
+      "feedback": "新的球与身体观测回到高层策略，重新选择与修正动作",
+      "meaning": "潜在技能组织身体协调；手腕分支调整拍面。接球任务把两种控制结合起来。",
+      "ppo": "优化高层接球策略；探索范围由动作先验约束，奖励评价击球结果。"
+    },
+    {
+      "id": "adapt",
+      "tag": "动作内容 × 执行节奏",
+      "dateLabel": "2026.08 · AdaPT",
+      "question": "动作做得对，怎样还让球拍在正确时刻到位？",
+      "training": [
+        {
+          "label": "视频 / 动捕动作",
+          "text": "恢复人体姿态，再重定向到机器人"
+        },
+        {
+          "label": "改变动作推进速度",
+          "text": "跟踪器练习更快与更慢的参考"
+        },
+        {
+          "label": "学习高层规划",
+          "text": "回球生成动作，发球加入残差修正"
+        }
+      ],
+      "runtime": [
+        {
+          "label": "身体与球轨迹",
+          "text": "感知估计当前位置与来球变化"
+        },
+        {
+          "label": "动作 z + 速度 α",
+          "text": "同时决定下一姿态与动作推进量"
+        },
+        {
+          "label": "参考 → 跟踪 → PD",
+          "text": "底层结合本体反馈执行当前参考"
+        }
+      ],
+      "feedback": "执行状态进入下一次动作生成，来球更新进入高层规划",
+      "meaning": "把姿态轨迹与时间进度一起建模，让规划和真实执行保持协调。",
+      "ppo": "训练跟踪与任务策略；跟踪阶段随机化节奏，高层学习速度适配。"
+    },
+    {
+      "id": "athlete",
+      "tag": "动作组合 → 反应式策略",
+      "dateLabel": "2026.10 · 预印本",
+      "question": "怎样把跑动和挥拍的参考知识装进一个接球策略？",
+      "training": [
+        {
+          "label": "跑动库 + 网球视频",
+          "text": "按击球位置组合接近与挥拍动作"
+        },
+        {
+          "label": "会调节奏的教师",
+          "text": "按击球期限调整参考动作相位"
+        },
+        {
+          "label": "DAgger → PPO",
+          "text": "蒸馏到学生，再优化回球质量"
+        }
+      ],
+      "runtime": [
+        {
+          "label": "身体、球与历史",
+          "text": "动捕与本体反馈构成实时观测"
+        },
+        {
+          "label": "学生策略",
+          "text": "历史编码器与动作网络共同推断动作"
+        },
+        {
+          "label": "29 维关节动作",
+          "text": "50 Hz 输出，驱动身体移动和挥拍"
+        }
+      ],
+      "feedback": "下一时刻的球和身体观测更新历史，继续生成关节动作",
+      "meaning": "动作组合扩大训练覆盖；教师把参考与时机知识传给直接响应观测的学生。",
+      "ppo": "教师阶段学习赶上期限；学生蒸馏后，进一步优化击球、过网与落点。"
+    }
+  ]
+}

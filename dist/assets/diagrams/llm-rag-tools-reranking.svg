@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="400" viewBox="0 0 840 400" role="img">
+<title>重排细看问题条件，再把相关片段放进上下文</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#35533c"/></marker><marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#47768a"/></marker><marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#b77b38"/></marker></defs>
+<rect width="840" height="400" rx="18" fill="#f5f8f3"/>
+<text x="30" y="38" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="22" font-weight="600" fill="#35533c" text-anchor="start">重排细看问题条件，再把相关片段放进上下文</text>
+<text x="810" y="37" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">排序与分数示意</text>
+<text x="43" y="89" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="20" font-weight="400" fill="#47768a" text-anchor="start">粗检索结果</text>
+<text x="468" y="89" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="20" font-weight="400" fill="#35533c" text-anchor="start">重排后结果</text>
+<rect x="39" y="111" width="306" height="39" rx="5" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="52" y="137" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#47768a" text-anchor="start">A  通用夹爪开口</text>
+<text x="329" y="137" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#47768a" text-anchor="end">0.88</text>
+<line x1="353" y1="130" x2="452" y2="179" stroke="#d7e1d4" stroke-width="1"/>
+<rect x="39" y="160" width="306" height="39" rx="5" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="52" y="186" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#47768a" text-anchor="start">B  R1 开口 70 mm</text>
+<text x="329" y="186" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#47768a" text-anchor="end">0.81</text>
+<line x1="353" y1="179" x2="452" y2="277" stroke="#d7e1d4" stroke-width="1"/>
+<rect x="39" y="209" width="306" height="39" rx="5" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="52" y="235" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#47768a" text-anchor="start">C  R2 开口 85 mm</text>
+<text x="329" y="235" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#47768a" text-anchor="end">0.79</text>
+<line x1="353" y1="228" x2="452" y2="130" stroke="#b77b38" stroke-width="3"/>
+<rect x="39" y="258" width="306" height="39" rx="5" fill="#e4edf1" stroke="none" stroke-width="1"/>
+<text x="52" y="284" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#47768a" text-anchor="start">D  夹爪维修步骤</text>
+<text x="329" y="284" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#47768a" text-anchor="end">0.60</text>
+<line x1="353" y1="277" x2="452" y2="228" stroke="#d7e1d4" stroke-width="1"/>
+<rect x="460" y="111" width="338" height="39" rx="5" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="474" y="137" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#35533c" text-anchor="start">C  R2 开口 85 mm</text>
+<text x="782" y="137" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#35533c" text-anchor="end">0.95</text>
+<rect x="460" y="160" width="338" height="39" rx="5" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="474" y="186" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#35533c" text-anchor="start">A  通用夹爪开口</text>
+<text x="782" y="186" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#35533c" text-anchor="end">0.90</text>
+<rect x="460" y="209" width="338" height="39" rx="5" fill="#ecefe9" stroke="none" stroke-width="1"/>
+<text x="474" y="235" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#35533c" text-anchor="start">D  夹爪维修步骤</text>
+<text x="782" y="235" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#35533c" text-anchor="end">0.30</text>
+<rect x="460" y="258" width="338" height="39" rx="5" fill="#ecefe9" stroke="none" stroke-width="1"/>
+<text x="474" y="284" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#35533c" text-anchor="start">B  R1 开口 70 mm</text>
+<text x="782" y="284" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#35533c" text-anchor="end">0.20</text>
+<text x="420" y="337" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="400" fill="#35533c" text-anchor="middle">上下文预算容纳 2 段：保留 C 与 A，并附原文位置</text>
+<line x1="30" y1="354" x2="810" y2="354" stroke="#d7e1d4" stroke-width="2"/>
+<text x="30" y="380" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#637265" text-anchor="start">左右来自不同评分器，数值各自在本列比较；示例优先保留匹配 R2 的证据。</text>
+</svg>

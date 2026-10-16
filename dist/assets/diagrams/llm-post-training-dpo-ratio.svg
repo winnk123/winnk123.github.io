@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="400" viewBox="0 0 840 400" role="img">
+<title>DPO 比较的是：当前模型比参考模型更偏向谁</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#35533c"/></marker><marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#47768a"/></marker><marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#b77b38"/></marker></defs>
+<rect width="840" height="400" rx="18" fill="#f5f8f3"/>
+<text x="30" y="38" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="22" font-weight="600" fill="#35533c" text-anchor="start">DPO 比较的是：当前模型比参考模型更偏向谁</text>
+<text x="810" y="37" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">概率示意</text>
+<rect x="30" y="70" width="370" height="234" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="46" y="98" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">固定参考模型</text>
+<text x="52" y="126" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="400" fill="#35533c" text-anchor="start">较好回答：整段概率 0.2</text>
+<text x="52" y="168" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="400" fill="#b77b38" text-anchor="start">较差回答：整段概率 0.1</text>
+<rect x="53" y="193" width="230" height="22" rx="4" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="53" y="193" width="115.0" height="22" rx="4" fill="#47768a" stroke="none" stroke-width="1"/>
+<text x="53" y="259" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="23" font-weight="400" fill="#47768a" text-anchor="start">较好 / 较差 = 2</text>
+<rect x="435" y="70" width="375" height="234" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="451" y="98" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">当前模型</text>
+<text x="457" y="126" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="400" fill="#35533c" text-anchor="start">较好回答：整段概率 0.4</text>
+<text x="457" y="168" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="400" fill="#b77b38" text-anchor="start">较差回答：整段概率 0.1</text>
+<rect x="458" y="193" width="230" height="22" rx="4" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="458" y="193" width="230" height="22" rx="4" fill="#35533c" stroke="none" stroke-width="1"/>
+<text x="458" y="259" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="23" font-weight="400" fill="#35533c" text-anchor="start">较好 / 较差 = 4</text>
+<text x="420" y="334" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="21" font-weight="400" fill="#35533c" text-anchor="middle">相对优势：ln(4) − ln(2) = ln(2)</text>
+<line x1="30" y1="354" x2="810" y2="354" stroke="#d7e1d4" stroke-width="2"/>
+<text x="30" y="380" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#637265" text-anchor="start">示例 β = 1，DPO 损失为 −ln(2/3) ≈ 0.405；条长表达回答概率比。</text>
+</svg>

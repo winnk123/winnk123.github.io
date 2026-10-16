@@ -1,0 +1,204 @@
+[
+  {
+    "id": "frontier-compactionrl",
+    "date": "2026.10.01",
+    "label": "Agent · 论文修订",
+    "title": "上下文压缩成为可训练的动作",
+    "teaser": "CompactionRL 把摘要与执行共同放入任务奖励。",
+    "lead": "长任务的瓶颈包括能否保留恢复执行所需的状态。CompactionRL 在固定峰值上下文下学习摘要生成。",
+    "change": "摘要 token 参与 PPO 优化，按 token 归一化损失，并对跨片段优势做位置修正；实验比较摘要损失和压缩训练的消融。",
+    "learn": "先读“长期 Agent”专题，用标定任务的状态快照测试路径、单位和失败尝试是否能被恢复。",
+    "sources": [
+      {
+        "title": "CompactionRL v2",
+        "url": "https://arxiv.org/html/2607.05378v2"
+      }
+    ],
+    "related": [
+      "cs336",
+      "openvla"
+    ],
+    "category": "llm",
+    "guideId": "llm-agent-memory"
+  },
+  {
+    "id": "frontier-tts-evaluation",
+    "date": "2026.08.31",
+    "label": "推理 · 论文修订",
+    "title": "更多候选怎样变成更好的最终答案",
+    "teaser": "把候选发现率与选择器的实际正确率分别测量。",
+    "lead": "Test-Time Scaling in Reasoning LLMs 将推理预算分为单路径延长、候选采样与前缀搜索，强调完整推理协议。",
+    "change": "使用固定候选池重放不同选择器，区分生成候选与选择答案的收益，并记录验证与采样成本。",
+    "learn": "读“推理时计算”专题，运行四候选算例，再按相同预算比较投票、评分和程序验证。",
+    "sources": [
+      {
+        "title": "Test-Time Scaling v2",
+        "url": "https://arxiv.org/html/2608.04001v2"
+      }
+    ],
+    "related": [
+      "cs336"
+    ],
+    "category": "llm",
+    "guideId": "llm-test-time-compute"
+  },
+  {
+    "id": "frontier-qwen-hybrid",
+    "date": "2026.08.26",
+    "label": "架构 · 开放权重",
+    "title": "递归状态与稀疏注意力共同管理历史",
+    "teaser": "Qwen3.8-Flash-Next 的 GDN + QSA 混合设计。",
+    "lead": "官方架构把压缩状态、微块索引、多分支残差与 N-gram embedding 组合到多模态 MoE 中。",
+    "change": "历史可以被压缩到状态，也可以按需读取选中的块；两种路径在长上下文中提供不同的信息访问方式。",
+    "learn": "先计算 KV 内存，再运行“长上下文的结构变化”中的选块与缓存算例。",
+    "sources": [
+      {
+        "title": "Qwen 官方仓库",
+        "url": "https://github.com/QwenLM/Qwen3.8-Flash-Next"
+      }
+    ],
+    "related": [
+      "cs336",
+      "clip"
+    ],
+    "category": "llm",
+    "guideId": "llm-hybrid-multimodal"
+  },
+  {
+    "id": "frontier-gemini-long-work",
+    "date": "2026.09.30",
+    "label": "长任务 · 分阶段开放",
+    "title": "长轨迹推理把评估推向完整工作流",
+    "teaser": "Gemini 4 Argon 强调持续的软件与知识工作任务。",
+    "lead": "Google 的发布说明将长时序、多步骤工作流作为重点，并公布 1M 输出 token 上限。",
+    "change": "更长输出预算让单轨迹推理成为系统设计的一部分：停止条件、工具反馈和中间产物需要共同评估。当前经 Fairwind 分阶段提供。",
+    "learn": "把发布展示转成可复现问题：同一任务固定总 token 与工具调用预算，测完成率、可验证产物和总耗时。",
+    "sources": [
+      {
+        "title": "Google 官方发布",
+        "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/"
+      }
+    ],
+    "related": [
+      "cs336"
+    ],
+    "category": "llm",
+    "guideId": "llm-agent-memory"
+  },
+  {
+    "id": "mem-memory",
+    "date": "2026.03.03",
+    "label": "记忆 · 长任务",
+    "title": "MEM：短时视频与长时语言记忆怎样配合",
+    "teaser": "同一个画面，可能对应不同的任务状态。记忆让动作选择带上刚才发生过的事。",
+    "lead": "MEM 将近期视觉历史与长期语言记录组合起来，为 VLA 提供跨动作、跨子任务的上下文。可以把它理解成两个不同粒度的缓存：细节保留动作过程，摘要保留已经确认的事件。",
+    "change": "研究将“看当前画面选动作”扩展为结合长短时历史作决策。关键阅读点是记忆如何压缩、何时更新、如何进入策略，以及失败后行为是否改变。",
+    "learn": "先运行站内“长任务的系统结构”中的左右抽屉实验，再在 MEM 架构图里定位 video encoder 与 language memory。比较移除其中一项后，哪些任务会丢失运动细节，哪些会忘记较早事件。",
+    "sources": [
+      {
+        "title": "Physical Intelligence · MEM",
+        "url": "https://www.pi.website/research/memory"
+      }
+    ],
+    "related": [
+      "openpi",
+      "pi-recap",
+      "pi07"
+    ],
+    "category": "embodied",
+    "guideId": "memory-world-handbook"
+  },
+  {
+    "id": "rlt-online",
+    "date": "2026.03.19",
+    "label": "在线学习 · 动作适配",
+    "title": "RLT：把 VLA 表示接到小型在线强化学习器",
+    "teaser": "通用模型提供表征与参考动作，快速更新的小模型负责改进精细操作。",
+    "lead": "RLT 用一个紧凑 RL token 汇总 VLA 内部表征，再让 actor 和 critic 在这个表示上学习。动作策略接收 VLA 的参考动作，利用在线经验修正动作块。",
+    "change": "适配重点从更新整个大模型，转到复用冻结表示并学习小型策略。阅读时沿着 observation、RL token、actor、critic、replay buffer 追踪一次数据流。",
+    "learn": "把一次插入任务拆成“接近目标”和“接触后微调”。写出第二段需要的状态、动作、奖励与终止条件，再对照论文如何保留 VLA 先验。用相同起始条件比较成功次数、重试次数和完成时间。",
+    "sources": [
+      {
+        "title": "Physical Intelligence · RLT",
+        "url": "https://www.pi.website/research/rlt"
+      }
+    ],
+    "related": [
+      "pi-recap",
+      "openpi",
+      "stanford-cs224r"
+    ],
+    "category": "embodied",
+    "guideId": "memory-world-handbook"
+  },
+  {
+    "id": "cosmos3-world",
+    "date": "2026.06.01",
+    "label": "世界模型 · 多模态",
+    "title": "Cosmos 3：把理解、预测与动作放进同一框架",
+    "teaser": "读世界模型，先分清它是在生成未来画面、恢复过去动作，还是直接预测下一段控制。",
+    "lead": "Cosmos 3 的论文首发于 2026 年 6 月 1 日，采用统一 mixture-of-transformers 框架处理语言、图像、视频和动作。官方项目同时展示策略、正向动力学与逆向动力学等任务。",
+    "change": "共享多模态模型可以服务于不同输入输出组合：观测加动作预测未来，前后观测恢复动作，图像加指令生成控制。接口决定了模型在机器人系统中承担的职责。",
+    "learn": "从项目页的 Forward Dynamics 与 Inverse Dynamics 两节开始，各画一份输入输出表。再用站内一维预测算例理解“提出候选—预测—评分—执行—重新观察”，最后回论文检查动作条件和多步预测的评测。",
+    "sources": [
+      {
+        "title": "Cosmos 3 官方项目",
+        "url": "https://research.nvidia.com/labs/cosmos-lab/cosmos3/"
+      },
+      {
+        "title": "Cosmos 3 论文与版本日期",
+        "url": "https://arxiv.org/abs/2606.02800"
+      }
+    ],
+    "related": [
+      "isaac-lab",
+      "groot17",
+      "mit-flow-diffusion"
+    ],
+    "category": "embodied",
+    "guideId": "memory-world-handbook"
+  },
+  {
+    "id": "multimodal-transfer",
+    "category": "llm",
+    "guideId": "unified-multimodal",
+    "date": "2026.07.05",
+    "label": "统一多模态 · 能力迁移",
+    "title": "理解与生成怎样共享一种能力",
+    "teaser": "从计数、空间关系和文字任务，看理解训练是否能改进生成。",
+    "lead": "统一模型把理解和生成放进同一系统后，还要解释两类任务的学习关系。Transferability 研究通过受控实验，检查一侧学到的能力能否迁移到另一侧。",
+    "change": "论文在计数、空间关系与文字能力上比较不同架构；完全共享骨干与统一视觉编码器的模型表现出更一致的跨任务迁移。架构中的共享方式因此成为关键变量。",
+    "learn": "共享参数、视觉表示与联合训练目标共同影响迁移。",
+    "sources": [
+      {
+        "title": "Transferability Between Understanding and Generation",
+        "url": "https://arxiv.org/abs/2607.04423"
+      }
+    ],
+    "related": [
+      "clip",
+      "mit-flow-diffusion"
+    ]
+  },
+  {
+    "id": "frontier-toolverse",
+    "date": "2026.07.17",
+    "label": "Agent · 环境与强化学习",
+    "title": "ToolVerse：工具调用怎样成为可训练的长任务",
+    "teaser": "有状态环境、工具依赖图与逐轮奖励，把调用顺序和长期反馈接起来。",
+    "lead": "ToolVerse 从工具定义生成可执行的 mock 环境，用依赖图构造多轮任务，并检查轨迹是否符合工具与状态规则。",
+    "change": "TARA 同时结合当前轮的相对正确性与后续回报，研究更细的信用分配怎样帮助多轮工具使用。",
+    "learn": "站内精读从环境状态、参数依赖、黄金轨迹与优势信号四个接口拆解方法，并接回 ReAct 的执行循环。",
+    "sources": [
+      {
+        "title": "ToolVerse · 原论文",
+        "url": "https://arxiv.org/html/2607.15660v1"
+      }
+    ],
+    "related": [
+      "cs336"
+    ],
+    "category": "llm",
+    "guideId": "llm-agent-memory"
+  }
+]

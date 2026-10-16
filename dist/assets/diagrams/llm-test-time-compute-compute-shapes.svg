@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="400" viewBox="0 0 840 400" role="img">
+<title>额外计算可以延长轨迹、增加候选或探索分支</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#35533c"/></marker><marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#47768a"/></marker><marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#b77b38"/></marker></defs>
+<rect width="840" height="400" rx="18" fill="#f5f8f3"/>
+<text x="30" y="38" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="22" font-weight="600" fill="#35533c" text-anchor="start">额外计算可以延长轨迹、增加候选或探索分支</text>
+<text x="810" y="37" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">圆点 = 生成步骤</text>
+<rect x="30" y="72" width="250" height="259" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="46" y="100" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">延长一条轨迹</text>
+<rect x="295" y="72" width="250" height="259" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="311" y="100" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">独立生成候选</text>
+<rect x="560" y="72" width="250" height="259" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="576" y="100" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">按分支继续搜索</text>
+<line x1="54" y1="166" x2="93" y2="166" stroke="#35533c" stroke-width="2"/>
+<circle cx="54" cy="166" r="9" fill="#35533c" stroke="none" stroke-width="1"/>
+<line x1="93" y1="166" x2="132" y2="166" stroke="#35533c" stroke-width="2"/>
+<circle cx="93" cy="166" r="9" fill="#35533c" stroke="none" stroke-width="1"/>
+<line x1="132" y1="166" x2="171" y2="166" stroke="#35533c" stroke-width="2"/>
+<circle cx="132" cy="166" r="9" fill="#35533c" stroke="none" stroke-width="1"/>
+<line x1="171" y1="166" x2="210" y2="166" stroke="#35533c" stroke-width="2"/>
+<circle cx="171" cy="166" r="9" fill="#35533c" stroke="none" stroke-width="1"/>
+<line x1="210" y1="166" x2="249" y2="166" stroke="#35533c" stroke-width="2"/>
+<circle cx="210" cy="166" r="9" fill="#35533c" stroke="none" stroke-width="1"/>
+<circle cx="249" cy="166" r="9" fill="#35533c" stroke="none" stroke-width="1"/>
+<text x="51" y="244" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="start">同一个回答继续推导</text>
+<text x="51" y="271" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="start">下一步依赖前一步</text>
+<line x1="343" y1="145" x2="489" y2="145" stroke="#47768a" stroke-width="2"/>
+<circle cx="343" cy="145" r="9" fill="#47768a" stroke="none" stroke-width="1"/>
+<circle cx="489" cy="145" r="9" fill="#47768a" stroke="none" stroke-width="1"/>
+<line x1="343" y1="192" x2="489" y2="192" stroke="#47768a" stroke-width="2"/>
+<circle cx="343" cy="192" r="9" fill="#47768a" stroke="none" stroke-width="1"/>
+<circle cx="489" cy="192" r="9" fill="#47768a" stroke="none" stroke-width="1"/>
+<line x1="343" y1="239" x2="489" y2="239" stroke="#47768a" stroke-width="2"/>
+<circle cx="343" cy="239" r="9" fill="#47768a" stroke="none" stroke-width="1"/>
+<circle cx="489" cy="239" r="9" fill="#47768a" stroke="none" stroke-width="1"/>
+<text x="315" y="294" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#47768a" text-anchor="start">三条尝试可并行生成</text>
+<line x1="685" y1="130" x2="624" y2="187" stroke="#b77b38" stroke-width="2"/>
+<line x1="685" y1="130" x2="747" y2="187" stroke="#b77b38" stroke-width="2"/>
+<line x1="624" y1="187" x2="597" y2="252" stroke="#b77b38" stroke-width="2"/>
+<line x1="624" y1="187" x2="649" y2="252" stroke="#b77b38" stroke-width="2"/>
+<line x1="747" y1="187" x2="747" y2="252" stroke="#b77b38" stroke-width="2"/>
+<circle cx="685" cy="130" r="10" fill="#b77b38" stroke="none" stroke-width="1"/>
+<circle cx="624" cy="187" r="10" fill="#b77b38" stroke="none" stroke-width="1"/>
+<circle cx="747" cy="187" r="10" fill="#b77b38" stroke="none" stroke-width="1"/>
+<circle cx="597" cy="252" r="10" fill="#b77b38" stroke="none" stroke-width="1"/>
+<circle cx="649" cy="252" r="10" fill="#35533c" stroke="none" stroke-width="1"/>
+<circle cx="747" cy="252" r="10" fill="#b77b38" stroke="none" stroke-width="1"/>
+<text x="580" y="304" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#b77b38" text-anchor="start">中间判断决定扩展位置</text>
+<line x1="30" y1="354" x2="810" y2="354" stroke="#d7e1d4" stroke-width="2"/>
+<text x="30" y="380" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#637265" text-anchor="start">三幅均画 6 个生成步骤；实际总成本还包含验证、工具调用和并行开销。</text>
+</svg>

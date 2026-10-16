@@ -1,0 +1,65 @@
+.study-overview,.study-notes{margin:30px 0;scroll-margin-top:115px}
+.study-overview{padding:25px;border:1px solid #d8e1ce;border-radius:12px;background:#f6f8f2}
+.study-overview h2,.study-notes>h2{font-size:23px;line-height:1.5;color:#35533c;margin:9px 0 15px}
+.study-overview>p,.study-section-intro{font-size:14px;line-height:1.95;color:#53674b;margin:0 0 20px}
+.study-table{background:#fff;margin:20px 0}
+.study-table table{font-size:12px;line-height:1.85}
+.study-table tbody th{background:#f7f9f3;min-width:100px;color:#3e6038}
+.study-table td{min-width:125px;color:#52674b}
+.study-table-note{font-size:12px!important;margin:10px 0 0!important;color:#69795d!important}
+.study-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin:19px 0 0}
+.study-shortcuts a{font-size:12px;line-height:1.6;padding:8px 12px;border:1px solid #cad9be;background:white;border-radius:5px;color:#46643a}
+.study-shortcuts a span{color:#9d7743;margin-left:5px}
+.rl-axes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:23px 0}
+.rl-axes article{padding:17px;background:#fff;border:1px solid #dce5d5;border-radius:8px}
+.rl-axes h3{font-size:15px;color:#3d6037;margin:0 0 9px;line-height:1.65}
+.rl-axes p{font-size:13px;line-height:1.9;color:#56694e;margin:0 0 12px}
+.rl-axes span{display:block;font-size:11px;color:#8d693e;line-height:1.8}
+.study-lesson{margin:16px 0;border:1px solid #d9e2d0;border-radius:10px;background:white;scroll-margin-top:112px;overflow:hidden}
+.study-lesson>summary{position:relative;cursor:pointer;padding:23px 26px;list-style:none;background:#f7f9f3}
+.study-lesson>summary::-webkit-details-marker{display:none}
+.study-kicker{font-size:11px;color:#876b44;letter-spacing:.3px}
+.study-lesson>summary h3{font-size:21px;color:#365b38;line-height:1.6;margin:8px 0 8px}
+.study-lesson>summary p{font-size:14px;line-height:1.85;color:#566e4b;margin:0 0 12px;max-width:750px}
+.study-expand{font-size:11px;color:#698557;border-bottom:1px solid #c2d2b5;padding-bottom:2px}
+.study-lesson[open]>summary{border-bottom:1px solid #e1e8da}
+.study-lesson-body{padding:5px 26px 23px}
+.study-part{position:relative;padding:22px 0 0}
+.study-part-number{font:12px Georgia,serif;color:#8ca17c;display:block;margin-bottom:5px}
+.study-part h4{font-size:17px;line-height:1.7;color:#3e6037;margin:0 0 10px}
+.study-part p,.rl-current p{font-size:14px;line-height:2;color:#4d6244;margin:0 0 13px}
+.study-takeaway{font-size:14px;line-height:1.95;padding:16px 18px;border-left:3px solid #b48146;background:#f6f0e5;color:#735d3c;margin:23px 0}
+.study-sources{display:grid;gap:10px;margin-top:25px;padding-top:17px;border-top:1px solid #e1e8d9}
+.study-sources a{font-size:12px;color:#446e48;line-height:1.7;overflow-wrap:anywhere}
+.study-sources span{display:block;color:#697d5c;font-size:11px;margin-top:3px}
+.study-paper-figure{margin:20px 0 4px}
+.study-paper-figure button{display:block;width:100%;position:relative;background:white;border:1px solid #e2e7da;border-radius:7px;padding:12px 12px 30px;cursor:zoom-in}
+.study-paper-figure img{display:block;width:100%;height:auto;max-height:440px;object-fit:contain}
+.study-paper-figure button span{position:absolute;bottom:8px;right:13px;font-size:11px;color:#5a754b}
+.study-paper-figure figcaption{font-size:11px;line-height:1.8;color:#728065;margin:10px 0;overflow-wrap:anywhere}
+.study-steps{list-style:decimal;padding-left:24px;margin:24px 0}
+.study-steps li{padding:6px 0 12px 5px;color:#a3753c}
+.study-steps h4{font-size:15px;color:#42653b;margin:0 0 5px}
+.study-steps p{font-size:13px;line-height:1.9;color:#536c49;margin:0}
+.rl-current{padding:23px;border:1px solid #dfd6bf;border-radius:8px;background:#f8f4eb;margin-top:25px}
+.rl-current h3{font-size:19px;line-height:1.6;color:#76603c;margin:0 0 13px}
+.ppo-lab{padding:20px;margin:24px 0;background:#f4f7ee;border:1px solid #d8e2ce;border-radius:8px}
+.ppo-lab h4{font-size:17px;line-height:1.7;margin:0 0 15px;color:#3b6038}
+.ppo-controls{display:grid;gap:9px;margin:19px 0}
+.ppo-controls label{display:flex;justify-content:space-between;font-size:12px;color:#57714b}
+.ppo-controls output{color:#a7783d;font-weight:600}
+.ppo-controls input{width:100%;accent-color:#5b7f4c}
+#ppo-plot svg{display:block;width:100%;height:auto}
+.ppo-legend{display:flex;flex-wrap:wrap;gap:15px;font-size:11px;color:#55714a;margin:8px 0 17px}
+.ppo-legend span+span{color:#986c35}
+.ppo-reading{font-size:13px;line-height:1.95;color:#53694a;margin:16px 0 0}
+.study-shortcuts a:focus-visible,.study-lesson>summary:focus-visible,.study-paper-figure button:focus-visible{outline:3px solid #b88042;outline-offset:2px}
+@media(max-width:760px){.study-overview{padding:18px}.study-overview h2,.study-notes>h2{font-size:21px}.rl-axes{grid-template-columns:1fr}.study-overview>p{font-size:13px}.study-lesson>summary{padding:18px}.study-lesson>summary h3{font-size:19px}.study-lesson>summary p{font-size:13px}.study-lesson-body{padding:2px 18px 20px}.study-part p{font-size:14px}.study-paper-figure button{padding:7px 5px 28px}.ppo-lab{padding:15px;margin-left:-5px;margin-right:-5px}.study-lesson,.study-overview,.study-notes{scroll-margin-top:135px}.rl-current{padding:18px}}
+.rl-axes dl { margin: 18px 0; }
+.rl-axes dl div + div { margin-top: 15px; }
+.rl-axes dt { font-size: 13px; font-weight: 650; color: var(--ink); }
+.rl-axes dd { margin: 5px 0 0; font-size: 13px; line-height: 1.85; color: #52604e; }
+.algorithm-comparison { border-top: 1px solid #d8e1ce; border-bottom: 1px solid #d8e1ce; padding: 16px 0; }
+.algorithm-comparison > summary { cursor: pointer; font-size: 14px; color: #35533c; font-weight: 600; }
+.algorithm-comparison > summary span { display: block; margin: 8px 0 0 19px; font-size: 11px; color: #708363; font-weight: 400; }
+.algorithm-comparison .study-table-note { padding-bottom: 8px; }

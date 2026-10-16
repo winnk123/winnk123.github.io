@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="400" viewBox="0 0 840 400" role="img">
+<title>重复文档改变抽样机会，去重重新分配预算</title>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#35533c"/></marker><marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#47768a"/></marker><marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#b77b38"/></marker></defs>
+<rect width="840" height="400" rx="18" fill="#f5f8f3"/>
+<text x="30" y="38" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="22" font-weight="600" fill="#35533c" text-anchor="start">重复文档改变抽样机会，去重重新分配预算</text>
+<text x="810" y="37" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="15" font-weight="400" fill="#637265" text-anchor="end">均匀抽样示意</text>
+<rect x="30" y="67" width="370" height="266" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="46" y="95" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">原始集合：8 条记录</text>
+<rect x="52" y="116" width="64" height="40" rx="7" fill="#f2e7d8" stroke="none" stroke-width="1"/>
+<text x="84.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#b77b38" text-anchor="middle">A</text>
+<rect x="134" y="116" width="64" height="40" rx="7" fill="#f2e7d8" stroke="none" stroke-width="1"/>
+<text x="166.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#b77b38" text-anchor="middle">A</text>
+<rect x="216" y="116" width="64" height="40" rx="7" fill="#f2e7d8" stroke="none" stroke-width="1"/>
+<text x="248.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#b77b38" text-anchor="middle">A</text>
+<rect x="298" y="116" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="330.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">B</text>
+<rect x="52" y="175" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="84.0" y="201.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">B</text>
+<rect x="134" y="175" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="166.0" y="201.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">C</text>
+<rect x="216" y="175" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="248.0" y="201.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">D</text>
+<rect x="298" y="175" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="330.0" y="201.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">E</text>
+<text x="53" y="257" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="20" font-weight="400" fill="#b77b38" text-anchor="start">A 占 3 / 8 条记录</text>
+<rect x="53" y="278" width="250" height="22" rx="4" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="53" y="278" width="93.75" height="22" rx="4" fill="#b77b38" stroke="none" stroke-width="1"/>
+<text x="313" y="296" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#b77b38" text-anchor="start">37.5%</text>
+<rect x="435" y="67" width="375" height="266" rx="8" fill="#ffffff" stroke="#d7e1d4" stroke-width="1"/>
+<text x="451" y="95" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="19" font-weight="600" fill="#35533c" text-anchor="start">按内容去重：5 篇文档</text>
+<rect x="456" y="116" width="64" height="40" rx="7" fill="#f2e7d8" stroke="none" stroke-width="1"/>
+<text x="488.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#b77b38" text-anchor="middle">A</text>
+<rect x="538" y="116" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="570.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">B</text>
+<rect x="620" y="116" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="652.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">C</text>
+<rect x="702" y="116" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="734.0" y="142.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">D</text>
+<rect x="456" y="175" width="64" height="40" rx="7" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<text x="488.0" y="201.0" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="18" font-weight="400" fill="#35533c" text-anchor="middle">E</text>
+<text x="457" y="257" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="20" font-weight="400" fill="#b77b38" text-anchor="start">A 占 1 / 5 篇文档</text>
+<rect x="457" y="278" width="250" height="22" rx="4" fill="#e6eee3" stroke="none" stroke-width="1"/>
+<rect x="457" y="278" width="50.0" height="22" rx="4" fill="#b77b38" stroke="none" stroke-width="1"/>
+<text x="717" y="296" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="17" font-weight="400" fill="#b77b38" text-anchor="start">20.0%</text>
+<line x1="405" y1="174" x2="429" y2="174" stroke="#35533c" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="30" y1="354" x2="810" y2="354" stroke="#d7e1d4" stroke-width="2"/>
+<text x="30" y="380" font-family="Noto Sans CJK SC,Noto Sans SC,system-ui,sans-serif" font-size="16" font-weight="400" fill="#637265" text-anchor="start">两侧均按记录等概率抽样；去重减少重复内容的相对训练机会。</text>
+</svg>

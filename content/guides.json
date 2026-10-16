@@ -4766,25 +4766,99 @@
               {
                 "title": "图片与文字怎样汇合",
                 "paragraphs": [
-                  "图片进入视觉编码器，描述进入独立的文字编码器，两边分别得到一个向量。线性投影把向量变到同一维度，再归一化长度。一个批次有若干图文对，两两点积就形成方形相似度矩阵，每行与每列都包含一个已知的正确配对。"
+                  "图片进入视觉编码器，描述进入独立的文字编码器，两边分别得到一个向量。线性投影把向量变到同一维度，再归一化长度。一个批次有若干图文对，两两点积就形成方形相似度矩阵，每行与每列都包含一个已知的正确配对。",
+                  "归一化把向量长度固定为 1，因此后面的点积不再奖励“向量更长”，而是在比较两个方向的夹角；语义相近的图像和文字需要在这个单位球面上靠近。"
+                ],
+                "equations": [
+                  {
+                    "latex": "v_i=f_\\theta(I_i),\\quad t_i=g_\\phi(T_i),\\quad \\hat v_i=\\frac{v_i}{\\|v_i\\|_2},\\quad \\hat t_i=\\frac{t_i}{\\|t_i\\|_2}\\in\\mathbb R^d",
+                    "plain": "图像和文字分别编码，再归一化到同一个 d 维单位球面",
+                    "terms": [
+                      {
+                        "symbol": "fθ / gφ",
+                        "meaning": "图像编码器 / 文字编码器"
+                      },
+                      {
+                        "symbol": "Iᵢ / Tᵢ",
+                        "meaning": "第 i 个图像 / 文本输入"
+                      },
+                      {
+                        "symbol": "v̂ᵢ / t̂ᵢ",
+                        "meaning": "归一化后的图像 / 文本向量"
+                      },
+                      {
+                        "symbol": "d",
+                        "meaning": "共享表示维度"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"图像和文字分别编码，再归一化到同一个 d 维单位球面\"><mrow><msub><mi>v</mi><mi>i</mi></msub><mo>=</mo><msub><mi>f</mi><mi>θ</mi></msub><mo stretchy=\"false\">(</mo><msub><mi>I</mi><mi>i</mi></msub><mo stretchy=\"false\">)</mo><mo>,</mo><mspace width=\"1em\" /><msub><mi>t</mi><mi>i</mi></msub><mo>=</mo><msub><mi>g</mi><mi>ϕ</mi></msub><mo stretchy=\"false\">(</mo><msub><mi>T</mi><mi>i</mi></msub><mo stretchy=\"false\">)</mo><mo>,</mo><mspace width=\"1em\" /><msub><mover accent=\"true\"><mi>v</mi><mo>^</mo></mover><mi>i</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>v</mi><mi>i</mi></msub></mrow><mrow><mo fence=\"false\" stretchy=\"false\">‖</mo><msub><mi>v</mi><mi>i</mi></msub><msub><mo fence=\"false\" stretchy=\"false\">‖</mo><mn>2</mn></msub></mrow></mfrac><mo>,</mo><mspace width=\"1em\" /><msub><mover accent=\"true\"><mi>t</mi><mo>^</mo></mover><mi>i</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>t</mi><mi>i</mi></msub></mrow><mrow><mo fence=\"false\" stretchy=\"false\">‖</mo><msub><mi>t</mi><mi>i</mi></msub><msub><mo fence=\"false\" stretchy=\"false\">‖</mo><mn>2</mn></msub></mrow></mfrac><mo>∈</mo><msup><mi mathvariant=\"double-struck\">R</mi><mi>d</mi></msup></mrow></math>",
+                    "mathmlSource": "v_i=f_\\theta(I_i),\\quad t_i=g_\\phi(T_i),\\quad \\hat v_i=\\frac{v_i}{\\|v_i\\|_2},\\quad \\hat t_i=\\frac{t_i}{\\|t_i\\|_2}\\in\\mathbb R^d"
+                  }
                 ]
               },
               {
                 "title": "哪些数据和参数参加训练",
                 "paragraphs": [
-                  "原论文从头训练两个编码器，使用4 亿组网络图文对。图像找文字、文字找图像各计算一次交叉熵，再平均更新两个编码器、投影层与温度参数。温度控制分数分布的尖锐程度，正确配对的相对得分提高时，损失随之下降。"
+                  "原论文从头训练两个编码器，使用4 亿组网络图文对。图像找文字、文字找图像各计算一次交叉熵，再平均更新两个编码器、投影层与温度参数。温度控制分数分布的尖锐程度，正确配对的相对得分提高时，损失随之下降。",
+                  "每一行都像一次“给定图片找文字”的分类，每一列则是“给定文字找图片”的分类；对角线是正配对，其余位置是批内负样本。温度 τ 越小，softmax 对分数差异越敏感，梯度会更集中到难区分的负样本。"
+                ],
+                "equations": [
+                  {
+                    "latex": "s_{ij}=\\frac{\\hat v_i^\\top\\hat t_j}{\\tau},\\quad \\mathcal L=\\frac12\\left[-\\frac1N\\sum_i\\log\\frac{e^{s_{ii}}}{\\sum_j e^{s_{ij}}}-\\frac1N\\sum_i\\log\\frac{e^{s_{ii}}}{\\sum_j e^{s_{ji}}}\\right]",
+                    "plain": "sᵢⱼ 是图像 i 与文字 j 的温度缩放相似度；损失是图→文和文→图交叉熵的平均",
+                    "terms": [
+                      {
+                        "symbol": "sᵢⱼ",
+                        "meaning": "批内第 i 张图像与第 j 段文字的 logit"
+                      },
+                      {
+                        "symbol": "τ",
+                        "meaning": "可学习温度，控制 softmax 的尖锐程度"
+                      },
+                      {
+                        "symbol": "N",
+                        "meaning": "批次中的图文配对数"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"sᵢⱼ 是图像 i 与文字 j 的温度缩放相似度；损失是图→文和文→图交叉熵的平均\"><mrow><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mfrac><mrow><msubsup><mover accent=\"true\"><mi>v</mi><mo>^</mo></mover><mi>i</mi><mo>⊤</mo></msubsup><msub><mover accent=\"true\"><mi>t</mi><mo>^</mo></mover><mi>j</mi></msub></mrow><mrow><mi>τ</mi></mrow></mfrac><mo>,</mo><mspace width=\"1em\" /><mi mathvariant=\"script\">L</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo stretchy=\"true\" fence=\"true\" form=\"prefix\">[</mo><mo>−</mo><mfrac><mn>1</mn><mi>N</mi></mfrac><msub><mo>∑</mo><mi>i</mi></msub><mi>log</mi><mfrac><mrow><msup><mi>e</mi><mrow><msub><mi>s</mi><mrow><mi>i</mi><mi>i</mi></mrow></msub></mrow></msup></mrow><mrow><msub><mo>∑</mo><mi>j</mi></msub><msup><mi>e</mi><mrow><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow></msup></mrow></mfrac><mo>−</mo><mfrac><mn>1</mn><mi>N</mi></mfrac><msub><mo>∑</mo><mi>i</mi></msub><mi>log</mi><mfrac><mrow><msup><mi>e</mi><mrow><msub><mi>s</mi><mrow><mi>i</mi><mi>i</mi></mrow></msub></mrow></msup></mrow><mrow><msub><mo>∑</mo><mi>j</mi></msub><msup><mi>e</mi><mrow><msub><mi>s</mi><mrow><mi>j</mi><mi>i</mi></mrow></msub></mrow></msup></mrow></mfrac><mo stretchy=\"true\" fence=\"true\" form=\"postfix\">]</mo></mrow></mrow></math>",
+                    "mathmlSource": "s_{ij}=\\frac{\\hat v_i^\\top\\hat t_j}{\\tau},\\quad \\mathcal L=\\frac12\\left[-\\frac1N\\sum_i\\log\\frac{e^{s_{ii}}}{\\sum_j e^{s_{ij}}}-\\frac1N\\sum_i\\log\\frac{e^{s_{ii}}}{\\sum_j e^{s_{ji}}}\\right]"
+                  }
                 ]
               },
               {
                 "title": "为什么类别描述能充当分类器",
                 "paragraphs": [
-                  "推理时把候选类别写成完整描述，例如“这是一张叉车的照片”，再由文字编码器生成一组类别向量。图片与这些向量比较后选择最高分项。相对固定分类头，这使类别集合能够随任务变化；描述模板也会改变文字向量的位置。"
+                  "推理时把候选类别写成完整描述，例如“这是一张叉车的照片”，再由文字编码器生成一组类别向量。图片与这些向量比较后选择最高分项。相对固定分类头，这使类别集合能够随任务变化；描述模板也会改变文字向量的位置。",
+                  "这里的“分类器权重”其实就是类别文本向量：换一组提示词，就换了一组比较方向，不需要重新训练图像编码器。但提示词的措辞会改变文本向量，所以模板选择仍会影响零样本结果。"
+                ],
+                "equations": [
+                  {
+                    "latex": "p(y=k\\mid I)=\\frac{\\exp(\\hat v^\\top\\hat t_k/\\tau)}{\\sum_{c=1}^{K}\\exp(\\hat v^\\top\\hat t_c/\\tau)}",
+                    "plain": "把 K 个类别写成文本提示后，用图像与每个类别文本的相似度做 softmax",
+                    "terms": [
+                      {
+                        "symbol": "tₖ",
+                        "meaning": "第 k 个类别提示的文字向量"
+                      },
+                      {
+                        "symbol": "K",
+                        "meaning": "候选类别数量"
+                      },
+                      {
+                        "symbol": "p(y=k|I)",
+                        "meaning": "图像 I 属于类别 k 的零样本概率"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"把 K 个类别写成文本提示后，用图像与每个类别文本的相似度做 softmax\"><mrow><mi>p</mi><mo stretchy=\"false\">(</mo><mi>y</mi><mo>=</mo><mi>k</mi><mo>∣</mo><mi>I</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mfrac><mrow><mi>exp</mi><mo stretchy=\"false\">(</mo><msup><mover accent=\"true\"><mi>v</mi><mo>^</mo></mover><mo>⊤</mo></msup><msub><mover accent=\"true\"><mi>t</mi><mo>^</mo></mover><mi>k</mi></msub><mo>/</mo><mi>τ</mi><mo stretchy=\"false\">)</mo></mrow><mrow><msubsup><mo>∑</mo><mrow><mi>c</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>K</mi></mrow></msubsup><mi>exp</mi><mo stretchy=\"false\">(</mo><msup><mover accent=\"true\"><mi>v</mi><mo>^</mo></mover><mo>⊤</mo></msup><msub><mover accent=\"true\"><mi>t</mi><mo>^</mo></mover><mi>c</mi></msub><mo>/</mo><mi>τ</mi><mo stretchy=\"false\">)</mo></mrow></mfrac></mrow></math>",
+                    "mathmlSource": "p(y=k\\mid I)=\\frac{\\exp(\\hat v^\\top\\hat t_k/\\tau)}{\\sum_{c=1}^{K}\\exp(\\hat v^\\top\\hat t_c/\\tau)}"
+                  }
                 ]
               },
               {
                 "title": "实验里应该比较什么",
                 "paragraphs": [
-                  "先区分零样本分类与线性探测：前者直接使用类别描述，后者固定视觉特征后用标注训练一个分类器。再观察不同任务和分布变化下的结果，并核对提示模板与模板集成设置，才能看出提升来自视觉表示、文字定义还是额外的监督。"
+                  "先区分零样本分类与线性探测：前者直接使用类别描述，后者固定视觉特征后用标注训练一个分类器。再观察不同任务和分布变化下的结果，并核对提示模板与模板集成设置，才能看出提升来自视觉表示、文字定义还是额外的监督。",
+                  "对一行 softmax 交叉熵，logit 的导数可以写成 pᵢⱼ−1[j=i]：正确配对的梯度推动 sᵢᵢ 上升，竞争配对被压低，而且当前概率越高的错误负样本更新越大。这就是“难负样本”会主导学习的数学原因。"
                 ]
               }
             ],
@@ -4871,19 +4945,116 @@
               {
                 "title": "图像怎样进入语言模型",
                 "paragraphs": [
-                  "图片先经过 CLIP 视觉编码器，得到按图块排列的特征。一个线性投影逐行调整特征维度，再把视觉向量与问题词向量放入 Vicuna 语言模型。回答位置通过注意力读取图像与对话历史，随后按下一词预测逐步生成回复。"
+                  "图片先经过 CLIP 视觉编码器，得到按图块排列的特征。一个线性投影逐行调整特征维度，再把视觉向量与问题词向量放入 Vicuna 语言模型。回答位置通过注意力读取图像与对话历史，随后按下一词预测逐步生成回复。",
+                  "投影器改变的是坐标系和通道宽度，不是图像块的数量；Hᵥ 仍是连续向量，直接作为语言模型的输入，不是先查词表得到的离散单词。",
+                  "在回答位置，注意力可以读取视觉 token、问题和已经生成的回答；因果掩码会挡住未来回答。这样同一张图片可以在不同问题下被读取出不同的相关信息。"
+                ],
+                "equations": [
+                  {
+                    "latex": "Z_v=E_{\\rm CLIP}(X_v)\\in\\mathbb R^{n\\times d_v},\\quad H_v=Z_vW+b\\in\\mathbb R^{n\\times d_\\ell}",
+                    "plain": "CLIP 输出 n×dᵥ 的视觉特征，线性投影后得到 n×dₗ 的视觉 token",
+                    "terms": [
+                      {
+                        "symbol": "Xᵥ",
+                        "meaning": "输入图像"
+                      },
+                      {
+                        "symbol": "Zᵥ",
+                        "meaning": "视觉编码器输出的 n 个局部特征"
+                      },
+                      {
+                        "symbol": "W,b",
+                        "meaning": "把视觉维度映射到语言输入维度的投影参数"
+                      },
+                      {
+                        "symbol": "n,dᵥ,dₗ",
+                        "meaning": "视觉 token 数、视觉维度、语言模型输入维度"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"CLIP 输出 n×dᵥ 的视觉特征，线性投影后得到 n×dₗ 的视觉 token\"><mrow><msub><mi>Z</mi><mi>v</mi></msub><mo>=</mo><msub><mi>E</mi><mrow><mi mathvariant=\"normal\">C</mi><mi mathvariant=\"normal\">L</mi><mi mathvariant=\"normal\">I</mi><mi mathvariant=\"normal\">P</mi></mrow></msub><mo stretchy=\"false\">(</mo><msub><mi>X</mi><mi>v</mi></msub><mo stretchy=\"false\">)</mo><mo>∈</mo><msup><mi mathvariant=\"double-struck\">R</mi><mrow><mi>n</mi><mo>×</mo><msub><mi>d</mi><mi>v</mi></msub></mrow></msup><mo>,</mo><mspace width=\"1em\" /><msub><mi>H</mi><mi>v</mi></msub><mo>=</mo><msub><mi>Z</mi><mi>v</mi></msub><mi>W</mi><mo>+</mo><mi>b</mi><mo>∈</mo><msup><mi mathvariant=\"double-struck\">R</mi><mrow><mi>n</mi><mo>×</mo><msub><mi>d</mi><mi>ℓ</mi></msub></mrow></msup></mrow></math>",
+                    "mathmlSource": "Z_v=E_{\\rm CLIP}(X_v)\\in\\mathbb R^{n\\times d_v},\\quad H_v=Z_vW+b\\in\\mathbb R^{n\\times d_\\ell}"
+                  },
+                  {
+                    "latex": "H=[H_v;H_q;H_a],\\qquad H_{a,t}\\leftarrow\\operatorname{Attn}(H_v,H_q,H_{a,<t})",
+                    "plain": "视觉 token、问题 token、已生成回答 token 按顺序组成因果序列",
+                    "terms": [
+                      {
+                        "symbol": "Hᵥ / Hq / Ha",
+                        "meaning": "视觉、问题、回答的连续 token 序列"
+                      },
+                      {
+                        "symbol": "Hₐ,<t",
+                        "meaning": "第 t 个回答 token 之前已经生成的内容"
+                      },
+                      {
+                        "symbol": "Attn",
+                        "meaning": "带因果可见性限制的语言模型注意力"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"视觉 token、问题 token、已生成回答 token 按顺序组成因果序列\"><mrow><mi>H</mi><mo>=</mo><mo stretchy=\"false\">[</mo><msub><mi>H</mi><mi>v</mi></msub><mi>;</mi><msub><mi>H</mi><mi>q</mi></msub><mi>;</mi><msub><mi>H</mi><mi>a</mi></msub><mo stretchy=\"false\">]</mo><mo>,</mo><mspace width=\"2em\" /><msub><mi>H</mi><mrow><mi>a</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>←</mo><mo>Attn</mo><mo stretchy=\"false\">(</mo><msub><mi>H</mi><mi>v</mi></msub><mo>,</mo><msub><mi>H</mi><mi>q</mi></msub><mo>,</mo><msub><mi>H</mi><mrow><mi>a</mi><mo>,</mo><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy=\"false\">)</mo></mrow></math>",
+                    "mathmlSource": "H=[H_v;H_q;H_a],\\qquad H_{a,t}\\leftarrow\\operatorname{Attn}(H_v,H_q,H_{a,<t})"
+                  }
                 ]
               },
               {
                 "title": "两阶段更新了哪些模块",
                 "paragraphs": [
-                  "第一阶段使用从图文数据中筛选出的约59.5 万对样本，冻结视觉编码器和语言模型，只训练投影层。第二阶段保持视觉编码器冻结，同时更新投影层与语言模型，使视觉接口和回答行为共同适应约15.8 万条视觉指令。"
+                  "第一阶段使用从图文数据中筛选出的约59.5 万对样本，冻结视觉编码器和语言模型，只训练投影层。第二阶段保持视觉编码器冻结，同时更新投影层与语言模型，使视觉接口和回答行为共同适应约15.8 万条视觉指令。",
+                  "视觉 token 是条件输入，不是词表里的监督目标；掩码 mₜ 让损失只评估回答位置，避免模型因为复制问题提示而获得奖励。语言模型必须利用视觉条件来降低回答 token 的负对数似然。",
+                  "第一阶段先让投影器把视觉表示变成语言模型“读得懂”的连续输入，第二阶段再让投影器和语言模型共同学习如何按问题使用这些输入；视觉编码器保持冻结，避免破坏已经学到的通用视觉表示。"
+                ],
+                "equations": [
+                  {
+                    "latex": "\\mathcal L_{\\rm ans}=-\\frac{\\sum_{t=1}^{L}m_t\\log p_\\theta(a_t\\mid X_v,q,a_{<t})}{\\sum_{t=1}^{L}m_t}",
+                    "plain": "只在回答 token 的掩码位置上平均负对数似然",
+                    "terms": [
+                      {
+                        "symbol": "aₜ",
+                        "meaning": "回答中的第 t 个 token"
+                      },
+                      {
+                        "symbol": "mₜ",
+                        "meaning": "损失掩码；回答位置为 1，图像/问题提示位置为 0"
+                      },
+                      {
+                        "symbol": "L",
+                        "meaning": "拼接序列中的 token 数"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"只在回答 token 的掩码位置上平均负对数似然\"><mrow><msub><mi mathvariant=\"script\">L</mi><mrow><mi mathvariant=\"normal\">a</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">s</mi></mrow></msub><mo>=</mo><mo>−</mo><mfrac><mrow><msubsup><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>L</mi></mrow></msubsup><msub><mi>m</mi><mi>t</mi></msub><mi>log</mi><msub><mi>p</mi><mi>θ</mi></msub><mo stretchy=\"false\">(</mo><msub><mi>a</mi><mi>t</mi></msub><mo>∣</mo><msub><mi>X</mi><mi>v</mi></msub><mo>,</mo><mi>q</mi><mo>,</mo><msub><mi>a</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy=\"false\">)</mo></mrow><mrow><msubsup><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>L</mi></mrow></msubsup><msub><mi>m</mi><mi>t</mi></msub></mrow></mfrac></mrow></math>",
+                    "mathmlSource": "\\mathcal L_{\\rm ans}=-\\frac{\\sum_{t=1}^{L}m_t\\log p_\\theta(a_t\\mid X_v,q,a_{<t})}{\\sum_{t=1}^{L}m_t}"
+                  },
+                  {
+                    "latex": "\\mathrm{Stage\\ 1:}\\quad\\min_W\\mathcal L_{\\rm cap}(W;E_{\\rm CLIP},\\theta_{\\rm LM}\\ \\mathrm{frozen}),\\qquad \\mathrm{Stage\\ 2:}\\quad\\min_{W,\\theta_{\\rm LM}}\\mathcal L_{\\rm ans}(W,\\theta_{\\rm LM};E_{\\rm CLIP}\\ \\mathrm{frozen})",
+                    "plain": "第一阶段只学视觉接口，第二阶段在冻结视觉编码器的前提下共同调整投影器和语言模型",
+                    "terms": [
+                      {
+                        "symbol": "W",
+                        "meaning": "视觉到语言的投影参数"
+                      },
+                      {
+                        "symbol": "θLM",
+                        "meaning": "语言模型参数"
+                      },
+                      {
+                        "symbol": "ECLIP",
+                        "meaning": "冻结的视觉编码器"
+                      },
+                      {
+                        "symbol": "Lcap / Lans",
+                        "meaning": "图像描述接口对齐损失 / 视觉指令回答损失"
+                      }
+                    ],
+                    "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\" alttext=\"第一阶段只学视觉接口，第二阶段在冻结视觉编码器的前提下共同调整投影器和语言模型\"><mrow><mrow><mi mathvariant=\"normal\">S</mi><mi mathvariant=\"normal\">t</mi><mi mathvariant=\"normal\">a</mi><mi mathvariant=\"normal\">g</mi><mi mathvariant=\"normal\">e</mi><mtext> </mtext><mn>1</mn><mi mathvariant=\"normal\">:</mi></mrow><mspace width=\"1em\" /><msub><mo>min</mo><mi>W</mi></msub><msub><mi mathvariant=\"script\">L</mi><mrow><mi mathvariant=\"normal\">c</mi><mi mathvariant=\"normal\">a</mi><mi mathvariant=\"normal\">p</mi></mrow></msub><mo stretchy=\"false\">(</mo><mi>W</mi><mi>;</mi><msub><mi>E</mi><mrow><mi mathvariant=\"normal\">C</mi><mi mathvariant=\"normal\">L</mi><mi mathvariant=\"normal\">I</mi><mi mathvariant=\"normal\">P</mi></mrow></msub><mo>,</mo><msub><mi>θ</mi><mrow><mi mathvariant=\"normal\">L</mi><mi mathvariant=\"normal\">M</mi></mrow></msub><mtext> </mtext><mrow><mi mathvariant=\"normal\">f</mi><mi mathvariant=\"normal\">r</mi><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">z</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi></mrow><mo stretchy=\"false\">)</mo><mo>,</mo><mspace width=\"2em\" /><mrow><mi mathvariant=\"normal\">S</mi><mi mathvariant=\"normal\">t</mi><mi mathvariant=\"normal\">a</mi><mi mathvariant=\"normal\">g</mi><mi mathvariant=\"normal\">e</mi><mtext> </mtext><mn>2</mn><mi mathvariant=\"normal\">:</mi></mrow><mspace width=\"1em\" /><msub><mo>min</mo><mrow><mi>W</mi><mo>,</mo><msub><mi>θ</mi><mrow><mi mathvariant=\"normal\">L</mi><mi mathvariant=\"normal\">M</mi></mrow></msub></mrow></msub><msub><mi mathvariant=\"script\">L</mi><mrow><mi mathvariant=\"normal\">a</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">s</mi></mrow></msub><mo stretchy=\"false\">(</mo><mi>W</mi><mo>,</mo><msub><mi>θ</mi><mrow><mi mathvariant=\"normal\">L</mi><mi mathvariant=\"normal\">M</mi></mrow></msub><mi>;</mi><msub><mi>E</mi><mrow><mi mathvariant=\"normal\">C</mi><mi mathvariant=\"normal\">L</mi><mi mathvariant=\"normal\">I</mi><mi mathvariant=\"normal\">P</mi></mrow></msub><mtext> </mtext><mrow><mi mathvariant=\"normal\">f</mi><mi mathvariant=\"normal\">r</mi><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">z</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi></mrow><mo stretchy=\"false\">)</mo></mrow></math>",
+                    "mathmlSource": "\\mathrm{Stage\\ 1:}\\quad\\min_W\\mathcal L_{\\rm cap}(W;E_{\\rm CLIP},\\theta_{\\rm LM}\\ \\mathrm{frozen}),\\qquad \\mathrm{Stage\\ 2:}\\quad\\min_{W,\\theta_{\\rm LM}}\\mathcal L_{\\rm ans}(W,\\theta_{\\rm LM};E_{\\rm CLIP}\\ \\mathrm{frozen})"
+                  }
                 ]
               },
               {
                 "title": "视觉指令数据怎样生成",
                 "paragraphs": [
-                  "论文让文字版 GPT-4 接收图片的已有描述、物体名称和边界框，再据此生成问题与答案。边界框把位置关系变成文字教师可处理的结构。训练学生时则使用真实图片与这些问答，让生成目标推动语言模型学习读取视觉向量。"
+                  "论文让文字版 GPT-4 接收图片的已有描述、物体名称和边界框，再据此生成问题与答案。边界框把位置关系变成文字教师可处理的结构。训练学生时则使用真实图片与这些问答，让生成目标推动语言模型学习读取视觉向量。",
+                  "训练信号必须迫使回答依赖图像，否则语言模型可能只凭问题措辞和语言先验降低损失。边界框与描述为文字教师提供结构化证据，学生阶段则用真实图片加生成的指令—回答对，学习把视觉证据接到具体回答上。"
                 ]
               },
               {

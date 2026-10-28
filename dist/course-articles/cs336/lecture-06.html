@@ -1,0 +1,50 @@
+<section class="course-source-section level-3" id="lecture-06-heading-001-从-gpu-性能模型到-kernel-编程"><h3>从 GPU 性能模型到 kernel 编程</h3>
+<p>第5讲介绍了 GPU 的硬件层次和数据移动，本讲继续进入代码：怎样 benchmark 和 profile，怎样用 Triton 编写 kernel，以及怎样理解 Triton、PTX 和 XLA 等抽象。核心方法是先建立正确性，再用测量确认瓶颈，最后围绕内存访问、线程组织和数据复用优化。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-06/figures/official_gpu-hardware-c9c14faf.webp" alt="A100、H100 与 B200 的计算和内存层次对比" width="1189" height="933" loading="lazy"><figcaption>A100、H100 与 B200 的计算和内存层次对比</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-06/figures/official_grid-with-ctas-a88968aa.webp" alt="CUDA 编程模型中的 thread、thread block 与 grid" width="1048" height="583" loading="lazy"><figcaption>CUDA 编程模型中的 thread、thread block 与 grid</figcaption></figure>
+<p>GPU 上的线程以 warp 协同执行，thread block 被调度到一个 SM，并可以使用共享内存。Triton 让程序员以 block 为单位描述计算：加载一块数据，进行融合或归约，再写回 HBM。它隐藏了一部分线程索引和同步细节，同时保留 tile、block size 和内存布局等性能控制点。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-06-heading-002-benchmarking-与-profiling"><h3>Benchmarking 与 profiling</h3>
+<p>GPU kernel 是异步执行的，CPU 端计时如果没有同步，测到的可能只是 kernel launch 时间。可靠 benchmark 需要预热、同步、重复多次并报告稳定统计量；还要区分首次编译、缓存命中、输入 shape 和 dtype。</p>
+<p>Profiling 的作用是回答“时间究竟花在哪里”：哪些 kernel 被调用、每个 kernel 运行多久、SM 是否满载、内存带宽是否饱和、是否存在同步或通信空洞。先 benchmark 确认端到端收益，再 profile 解释原因，能避免只优化局部而不改善整体。</p>
+<section class="course-source-section level-4" id="lecture-06-heading-003-正确性优先"><h4>正确性优先</h4>
+<p>自定义 kernel 必须先与 PyTorch 参考实现比较，覆盖不同 shape、边界尺寸、dtype 和数值误差。性能优化不能牺牲 mask、stride、广播和极端输入下的正确性。Triton 编译器会生成 PTX，PTX 中可以看到 global load/store、block ID、thread ID 和寄存器使用等底层信息。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-06-heading-004-triton-从逐元素到归约"><h3>Triton：从逐元素到归约</h3>
+<section class="course-source-section level-4" id="lecture-06-heading-005-gelu-kernel"><h4>GeLU kernel</h4>
+<p>GeLU 是逐元素操作，每个输出只依赖一个输入。一个 Triton kernel 通常让一个 program instance 处理一块连续元素：根据 block ID 计算偏移，mask 掉超出范围的元素，从 global memory 加载，计算 GeLU，再写回。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-06/figures/official_pasted-image-0-08f83f40.webp" alt="GPU 内存层次与 kernel 数据移动的硬件约束" width="305" height="158" loading="lazy"><figcaption>GPU 内存层次与 kernel 数据移动的硬件约束</figcaption></figure>
+<p>逐元素 kernel 的性能主要受内存带宽、合并访问和 launch 开销影响。若每个线程只做极少计算，增加算力不会带来收益；可以通过 thread coarsening 让一个线程处理多个元素，也可以把相邻逐元素操作融合。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-06-heading-006-softmax-block-内通信"><h4>Softmax：block 内通信</h4>
+<p>softmax 需要对每行求最大值、指数和归一化。与 GeLU 不同，一个输出依赖同一行的多个元素，因此线程需要协作。若一行能放进一个 block，可以先加载整行到寄存器或共享内存，计算 row max 和 row sum，再写回结果。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-06/figures/official_triton-softmax-f18a6dd4.webp" alt="Triton fused softmax 将加载、归约、指数和归一化放在一个kernel中" width="1536" height="426" loading="lazy"><figcaption>Triton fused softmax 将加载、归约、指数和归一化放在一个kernel中</figcaption></figure>
+<p>数值稳定的 softmax 先减去行最大值：</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{softmax}(x_i)=\frac{\exp(x_i-m)}{\sum_j\exp(x_j-m)}, \qquad m=\max_j x_j."><mrow><mo>softmax</mo><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>exp</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mi>m</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mo>∑</mo><mi>j</mi></msub><mi>exp</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><mi>m</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>,</mo><mspace width="2em" /><mi>m</mi><mo>=</mo><msub><mo>max</mo><mi>j</mi></msub><msub><mi>x</mi><mi>j</mi></msub><mo>.</mo></mrow></math></figure>
+<p>融合可以避免把中间的指数值和归约结果反复写回 HBM。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-06-heading-007-row-sum-与跨-tile-归约"><h4>Row sum 与跨 tile 归约</h4>
+<p>如果一行长于 block size，就需要把行切成多个 tile。每个线程遍历多个 tile，维护局部累加器，最后再在 block 内做一次归约。这里出现了 Triton kernel 的通用模式：tile、mask、局部累加和跨线程归约。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-06/figures/official_triton-row-sum-d1302c08.webp" alt="当一行无法放进一个 block 时的 tile 迭代和归约" width="1077" height="871" loading="lazy"><figcaption>当一行无法放进一个 block 时的 tile 迭代和归约</figcaption></figure>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-06-heading-008-triton-矩阵乘法与-tiling"><h3>Triton 矩阵乘法与 tiling</h3>
+<p>矩阵乘法 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="C=AB"><mrow><mi>C</mi><mo>=</mo><mi>A</mi><mi>B</mi></mrow></math></span> 是深度学习最重要的算子。朴素实现对每个 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="C_{m,n}"><mrow><msub><mi>C</mi><mrow><mi>m</mi><mo>,</mo><mi>n</mi></mrow></msub></mrow></math></span> 遍历 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span>，反复从 HBM 读取 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="A_{m,k}"><mrow><msub><mi>A</mi><mrow><mi>m</mi><mo>,</mo><mi>k</mi></mrow></msub></mrow></math></span> 和 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="B_{k,n}"><mrow><msub><mi>B</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub></mrow></math></span>，数据复用极差。</p>
+<p>Tiling 把输出矩阵分成 block tile：每个 program 加载一个 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="A"><mrow><mi>A</mi></mrow></math></span> tile 和一个 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="B"><mrow><mi>B</mi></mrow></math></span> tile 到共享内存或寄存器，沿 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span> 维分阶段累加，最后写回一个 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="C"><mrow><mi>C</mi></mrow></math></span> tile。若 tile size 为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="T"><mrow><mi>T</mi></mrow></math></span>，同一输入元素可以服务多个输出，算术强度随 tile 增大而提高。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-06/figures/official_gemm_tiled-c0bea88e.webp" alt="Triton 矩阵乘法通过输出 tile 复用输入数据" width="850" height="368" loading="lazy"><figcaption>Triton 矩阵乘法通过输出 tile 复用输入数据</figcaption></figure>
+<p>Triton matmul 还需要选择 block size、warp 数、矩阵布局和边界 mask。大 tile 增加复用，却消耗更多共享内存和寄存器；小 tile 容易提高并发，却可能降低计算强度。性能需要在目标硬件和实际 shape 上测量。</p>
+<figure class="course-code-block"><div class="course-code-caption">Triton kernel 的共同结构</div><pre><code class="language-python">@triton.jit
+def kernel(x_ptr, y_ptr, n_elements,
+           BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offsets &lt; n_elements
+    x = tl.load(x_ptr + offsets, mask=mask)
+    y = operation(x)
+    tl.store(y_ptr + offsets, y, mask=mask)</code></pre></figure>
+</section>
+<section class="course-source-section level-3" id="lecture-06-heading-009-总结与延伸"><h3>总结与延伸</h3>
+<p>本讲把 GPU 性能原则落到 kernel：benchmark 需要同步和预热，profile 用来解释瓶颈，Triton 用 block 级抽象编写逐元素、归约和矩阵乘法，PTX 则提供编译后执行的观察窗口。</p>
+<p>可以把优化模式归纳为：减少 HBM 往返、提高合并访问、把数据放入共享内存复用、融合多个操作、用重计算换内存，并根据 shape 调整 tile 和 warp 配置。下一讲将从单 GPU kernel 走向多 GPU 并行，通信和设备间数据移动会成为新的主要约束。</p>
+</section>

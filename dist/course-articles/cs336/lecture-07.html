@@ -1,0 +1,35 @@
+<section class="course-source-section level-3" id="lecture-07-heading-001-从单-gpu-到多-gpu"><h3>从单 GPU 到多 GPU</h3>
+<p>第7讲把第5、6讲的单 GPU 性能问题扩展到多 GPU。单卡内部要减少 HBM 访问，多卡训练还要减少 GPU 之间和节点之间的通信。参数、梯度、激活和 optimizer state 可能无法放在一张卡上，也可能需要更多 GPU 来缩短训练时间。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-07/figures/official_gpu-node-overview-00b7430f.webp" alt="单节点 GPU、HBM、NVLink 与跨节点网络组成的通信层次" width="1800" height="1007" loading="lazy"><figcaption>单节点 GPU、HBM、NVLink 与跨节点网络组成的通信层次</figcaption></figure>
+<p>并行策略可以按切分方向分类：data parallelism 沿 batch 切，tensor parallelism 沿模型宽度切，pipeline parallelism 沿深度切，expert/sequence/context parallelism 则分别切专家、序列或上下文。每种策略都把一部分存储或计算转化为通信。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-07-heading-002-集合通信原语"><h3>集合通信原语</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-07/figures/official_ranks-3bf961ea.webp" alt="rank、world size 与多设备集合通信的基本设置" width="813" height="114" loading="lazy"><figcaption>rank、world size 与多设备集合通信的基本设置</figcaption></figure>
+<p>常见 collective 包括 broadcast、scatter、gather、reduce、all-gather、reduce-scatter、all-reduce 和 all-to-all。all-reduce 可以拆成 reduce-scatter 加 all-gather：先把各 rank 的局部数据求和并分片，再把分片汇聚到所有 rank。</p>
+<ul class="course-itemize"><li><p>all-gather：每个 rank 持有一片，最后每个 rank 都得到完整对象；</p></li><li><p>reduce-scatter：所有 rank 的对应片段先归约，再把不同结果片段分发；</p></li><li><p>all-to-all：每个 rank 都向每个其他 rank 发送不同数据，MoE 路由尤其依赖它。</p></li></ul>
+</section>
+<section class="course-source-section level-3" id="lecture-07-heading-003-硬件互连与通信库"><h3>硬件互连与通信库</h3>
+<p>同一 GPU 内的 shared memory、同一节点内的 NVLink/NVSwitch、跨节点的 InfiniBand 或 Ethernet 具有不同带宽和延迟。NCCL 会读取硬件拓扑，选择通信路径并启动相应 GPU kernel；PyTorch `torch.distributed` 提供更高层接口，NCCL 则负责 GPU 后端的具体执行。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-07/figures/official_42774_2021_98_fig1_html-77b0c8b6.webp" alt="传统多 GPU 系统中 PCIe、节点和网络的通信层次" width="685" height="348" loading="lazy"><figcaption>传统多 GPU 系统中 PCIe、节点和网络的通信层次</figcaption></figure>
+<p>RDMA 允许网卡直接读写远端 GPU 相关内存，减少 CPU 介入。并行策略必须与拓扑匹配：需要频繁 all-reduce 的 tensor parallelism 更适合高速 NVLink；pipeline parallelism 的通信次数较少，可以容忍更慢的节点间连接。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-07-heading-004-数据并行-复制模型-切分-batch"><h3>数据并行：复制模型，切分 batch</h3>
+<p>数据并行在每个 rank 上保存完整模型，每个 rank 处理不同 batch 分片。反向传播得到局部梯度后，通过 all-reduce 求和或平均，使所有 rank 的参数保持一致。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-07/figures/official_data-parallelism-08d4b37e.webp" alt="数据并行沿 batch 维切分输入并同步梯度" width="625" height="889" loading="lazy"><figcaption>数据并行沿 batch 维切分输入并同步梯度</figcaption></figure>
+<p>DDP 的主循环是：不同 rank 读取不同数据，前向和反向独立执行，梯度同步后共同更新参数。优点是实现直接、计算扩展性好；缺点是每张卡都要保存完整参数、梯度和 optimizer state，模型太大时无法装入单卡。</p>
+<p>FSDP/ZeRO 用 all-gather 和 reduce-scatter 分片保存参数、梯度或 optimizer state：需要计算某层时临时聚合参数，计算完成后再释放或重新分片。它们减少了常驻显存，却增加了通信和调度复杂度。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-07-heading-005-张量并行-切分层内矩阵"><h3>张量并行：切分层内矩阵</h3>
+<p>张量并行把线性层权重按列或行分片。以列切分为例，每个 rank 计算部分输出，再通过 all-gather 或后续结构组合成完整激活。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-07/figures/official_tensor-parallelism-fac6cc52.webp" alt="张量并行把同一层的权重矩阵分到多个 rank" width="699" height="897" loading="lazy"><figcaption>张量并行把同一层的权重矩阵分到多个 rank</figcaption></figure>
+<p>张量并行每一层都可能需要通信，因此强依赖高速互连。它适合层内矩阵乘法占主导、GPU 位于同一 NVLink 域的场景。反向传播中的通信是前向通信的对偶，手写实现能清楚展示 all-gather、reduce-scatter 与梯度分片的关系。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-07-heading-006-流水线并行-切分层深度"><h3>流水线并行：切分层深度</h3>
+<p>流水线并行把连续层分配给不同 rank，激活沿 pipeline 传递。为了让各 stage 保持忙碌，需要把一个 batch 拆成多个 micro-batch；否则前向和反向之间会出现 pipeline bubble。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-07/figures/official_pipeline-parallelism-802b8315.webp" alt="流水线并行按层切分模型并传递 micro-batch 激活" width="699" height="897" loading="lazy"><figcaption>流水线并行按层切分模型并传递 micro-batch 激活</figcaption></figure>
+<p>流水线并行减少了每张卡需要保存的层数，通信主要发生在相邻 stage；代价是调度复杂、bubble 和激活保存需要处理。实际系统通常组合 data、tensor 和 pipeline parallelism，并根据硬件拓扑决定每一层的切分。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-07-heading-007-总结与延伸"><h3>总结与延伸</h3>
+<p>多 GPU 训练的统一问题是：计算和数据分布在哪里，哪些对象需要复制，哪些对象可以分片，以及通信是否足够快。data parallelism 复制模型并切 batch；tensor parallelism 切层内矩阵；pipeline parallelism 切层深度；FSDP/ZeRO 进一步分片参数、梯度和 optimizer state。</p>
+<p>下一讲继续处理更复杂的组合并行。选择策略时，应先看模型和激活是否能装入单卡，再看通信拓扑、同步频率、micro-batch 数和实现复杂度。</p>
+</section>

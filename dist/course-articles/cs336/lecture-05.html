@@ -1,0 +1,79 @@
+<section class="course-source-section level-3" id="lecture-05-heading-001-为什么系统决定模型能否扩展"><h3>为什么系统决定模型能否扩展</h3>
+<p>第5讲开始系统单元。语言模型的训练计算量随着模型和数据增长，但硬件并不会自动把更多 FLOPs 转化为更短的训练时间。Tatsu Hashimoto 把本讲组织成三部分：GPU 和 TPU 的硬件模型、GPU 工作负载的性能分析，以及 FlashAttention 如何把这些知识组合成高效算法。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p02-d0541535.webp" alt="GPU 系统课程的目标：理解硬件、性能与 FlashAttention" width="1800" height="1014" loading="lazy"><figcaption>GPU 系统课程的目标：理解硬件、性能与 FlashAttention</figcaption></figure>
+<p>GPU 的意义不只是峰值 FLOP/s。模型需要把参数、激活和输入从内存搬到计算单元；如果数据供应跟不上，计算单元就会空闲。系统优化因此围绕两个问题展开：需要移动多少数据，以及能否让一次移动被更多计算复用。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-05-heading-002-gpu-的执行与内存模型"><h3>GPU 的执行与内存模型</h3>
+<section class="course-source-section level-4" id="lecture-05-heading-003-cpu-与-gpu"><h4>CPU 与 GPU</h4>
+<p>CPU 面向少量高性能线程，强调单线程延迟和复杂控制；GPU 面向大量相似线程，强调吞吐和并行。神经网络中的矩阵乘法、逐元素操作和批处理天然适合后者。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p08-d0c0adbd.webp" alt="CPU 与 GPU 在延迟和吞吐目标上的差异" width="1800" height="1014" loading="lazy"><figcaption>CPU 与 GPU 在延迟和吞吐目标上的差异</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p10-ed5174b8.webp" alt="GPU 的 SM、缓存、共享内存和全局内存层次" width="1800" height="1014" loading="lazy"><figcaption>GPU 的 SM、缓存、共享内存和全局内存层次</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p11-1461ba33.webp" alt="GPU 中 thread、block 和 warp 的执行关系" width="1800" height="1014" loading="lazy"><figcaption>GPU 中 thread、block 和 warp 的执行关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p12-ce6ad9c9.webp" alt="线程寄存器、共享内存和全局内存的可见范围" width="1800" height="1014" loading="lazy"><figcaption>线程寄存器、共享内存和全局内存的可见范围</figcaption></figure>
+<p>GPU 由多个 streaming multiprocessor（SM）组成，每个 SM 内有许多执行单元。线程以 warp 为单位执行相同指令；block 被调度到一个 SM，并可以共享该 SM 的 shared memory。跨 block 的通信通常要经过更慢的 global memory。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-05-heading-004-计算与内存的增长差距"><h4>计算与内存的增长差距</h4>
+<p>矩阵乘法专用的 Tensor Core 让现代 GPU 的矩阵计算速度增长很快，但 HBM 容量和带宽增长相对慢。计算能力越强，越难保证每个计算单元持续得到数据；这就是常说的 memory wall。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p17-8eb59b30.webp" alt="Tensor Core 让矩阵乘法成为 GPU 的专门高速路径" width="1800" height="1014" loading="lazy"><figcaption>Tensor Core 让矩阵乘法成为 GPU 的专门高速路径</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p18-e807f60b.webp" alt="计算吞吐增长快于内存带宽所造成的 memory wall" width="1800" height="1014" loading="lazy"><figcaption>计算吞吐增长快于内存带宽所造成的 memory wall</figcaption></figure>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-05-heading-005-tpu-与-roofline"><h3>TPU 与 Roofline</h3>
+<p>TPU 和 GPU 的底层组织不同，但都包含轻量控制、矩阵乘法单元和快速片上存储。TPU 通过 systolic array 让数据沿阵列流动，在规则矩阵乘法上获得高吞吐；GPU 则提供更通用的 SIMT 编程模型和更多执行单元。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p13-19075bf8.webp" alt="TPU 通过 systolic array 执行规则矩阵乘法" width="1800" height="1014" loading="lazy"><figcaption>TPU 通过 systolic array 执行规则矩阵乘法</figcaption></figure>
+<p>硬件选择不是“GPU 或 TPU 谁更快”的单一问题。算子的 shape、精度、编译器、内存布局和通信方式都会改变实际性能。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-05-heading-006-gpu-性能分析与优化原则"><h3>GPU 性能分析与优化原则</h3>
+<p>Roofline 模型用算术强度</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="I=\frac{\text{FLOPs}}{\text{读取和写入的 bytes}}"><mrow><mi>I</mi><mo>=</mo><mfrac><mrow><mtext>FLOPs</mtext></mrow><mrow><mtext>读取和写入的 bytes</mtext></mrow></mfrac></mrow></math></figure>
+<p>判断算子更接近带宽上界还是计算上界。系统优化的共同目标是减少内存往返、提高数据复用并保持线程执行规则。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p21-a25e8876.webp" alt="Roofline 模型把带宽上界和计算上界放在同一图中" width="1800" height="1014" loading="lazy"><figcaption>Roofline 模型把带宽上界和计算上界放在同一图中</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p22-2c834123.webp" alt="GPU 优化的主要工具：精度、融合、重计算、合并访问与分块" width="1800" height="1014" loading="lazy"><figcaption>GPU 优化的主要工具：精度、融合、重计算、合并访问与分块</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-05-heading-007-低精度"><h4>低精度</h4>
+<p>降低 dtype 位宽会同时减少存储和内存传输，并让 Tensor Core 使用更高吞吐的路径。FP32、BF16、FP8 的选择要结合数值稳定性、缩放因子和累加精度。低精度的收益常常来自更高的 arithmetic intensity，而不只是算术指令本身更快。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p24-07c5c993.webp" alt="低精度计算减少数据移动并改善吞吐" width="1800" height="1014" loading="lazy"><figcaption>低精度计算减少数据移动并改善吞吐</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p25-dc61265b.webp" alt="逐元素算子在不同精度下的算术强度变化" width="1800" height="1014" loading="lazy"><figcaption>逐元素算子在不同精度下的算术强度变化</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p26-4da59005.webp" alt="低精度矩阵乘法与 Tensor Core 加速" width="1800" height="1014" loading="lazy"><figcaption>低精度矩阵乘法与 Tensor Core 加速</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-05-heading-008-控制发散与算子融合"><h4>控制发散与算子融合</h4>
+<p>SIMT 要求 warp 中的线程执行相同指令。条件分支并非禁止，但如果同一 warp 的线程走不同路径，硬件需要分别执行各路径，造成利用率下降。</p>
+<p>多个逐元素操作如果各自启动 kernel，会反复把中间结果写回 HBM，再读回下一 kernel。Operator fusion 把连续操作放到一个 kernel 中，减少中间结果的存取。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p31-07cdbad1.webp" alt="算子融合减少中间结果在 HBM 与计算单元之间往返" width="1800" height="1014" loading="lazy"><figcaption>算子融合减少中间结果在 HBM 与计算单元之间往返</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-05-heading-009-重计算"><h4>重计算</h4>
+<p>训练反向传播需要激活。如果保存所有激活会占用大量内存，可以丢弃部分激活，在 backward 时重新计算。重计算增加 FLOPs，却减少 HBM 读写，适合 memory-bound 的工作负载。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p34-c3fd7c3c.webp" alt="反向传播中保存激活和计算 Jacobian 的关系" width="1800" height="1014" loading="lazy"><figcaption>反向传播中保存激活和计算 Jacobian 的关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p36-9f1c12b5.webp" alt="丢弃激活并在反向时重计算的内存与计算折中" width="1800" height="1014" loading="lazy"><figcaption>丢弃激活并在反向时重计算的内存与计算折中</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-05-heading-010-合并访问与-tiling"><h4>合并访问与 tiling</h4>
+<p>DRAM 以 burst 方式传输连续数据。若 warp 中的线程访问连续地址，读取可以合并；若线程跳跃访问，带宽会被浪费。矩阵乘法还需要 tiling：把矩阵切成 tile，加载到 shared memory，在多个乘加中重复使用，减少 global memory 读取。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p38-79601694.webp" alt="warp 中线程的合并内存访问" width="1800" height="1014" loading="lazy"><figcaption>warp 中线程的合并内存访问</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p40-08cbfff6.webp" alt="矩阵乘法通过 tile 在 shared memory 中复用数据" width="1800" height="1014" loading="lazy"><figcaption>矩阵乘法通过 tile 在 shared memory 中复用数据</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p41-6b339559.webp" alt="tiling 的分阶段加载与计算流程" width="1800" height="1014" loading="lazy"><figcaption>tiling 的分阶段加载与计算流程</figcaption></figure>
+<p>理想 tile size 还受 shared memory 容量、矩阵维度可除性、burst 对齐和 occupancy 影响。理论上相同的矩阵乘法，shape 改变几个元素就可能让 tile 数量、wave 数和对齐方式发生跳变。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p45-47298f57.webp" alt="矩阵尺寸变化造成的性能变化与 tile 对齐问题" width="1800" height="1014" loading="lazy"><figcaption>矩阵尺寸变化造成的性能变化与 tile 对齐问题</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p48-4c200a1e.webp" alt="wave quantization 导致的周期性性能变化" width="1800" height="1014" loading="lazy"><figcaption>wave quantization 导致的周期性性能变化</figcaption></figure>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-05-heading-011-flashattention-把数据移动放进算法设计"><h3>FlashAttention：把数据移动放进算法设计</h3>
+<p>标准 attention 包含 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="QK^T"><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow></math></span>、softmax 和与 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="V"><mrow><mi>V</mi></mrow></math></span> 的乘法。直接实现会保存巨大的 attention matrix，并在多个 kernel 之间往返 HBM。FlashAttention 的关键不是改变 attention 的数学结果，而是把计算按 tile 组织，在片上存储中完成尽可能多的复用<sup class="course-footnote-ref" id="course-footnote-ref-05-1"><a href="#courses?lecture=lecture-05&section=course-footnote-05-1">1</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p50-257a2fce.webp" alt="FlashAttention 将 attention 的矩阵乘法和数据移动作为整体优化" width="1800" height="1014" loading="lazy"><figcaption>FlashAttention 将 attention 的矩阵乘法和数据移动作为整体优化</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p53-a0662c27.webp" alt="Online softmax 逐块更新最大值和归一化累积量" width="1800" height="1014" loading="lazy"><figcaption>Online softmax 逐块更新最大值和归一化累积量</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p54-cfcb86b4.webp" alt="FlashAttention 前向传播中的 tile、融合和在线 softmax" width="1800" height="1014" loading="lazy"><figcaption>FlashAttention 前向传播中的 tile、融合和在线 softmax</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-05-heading-012-online-softmax"><h4>Online softmax</h4>
+<p>softmax 需要全局最大值和归一化分母。分块计算时，当前 tile 并不知道后续 tile 的最大值，因此需要维护运行中的最大值 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="m"><mrow><mi>m</mi></mrow></math></span> 和归一化累积量 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="l"><mrow><mi>l</mi></mrow></math></span>。当新 tile 的最大值更大时，旧累积量按指数因子重新缩放，再加入当前 tile 的贡献。这样可以逐块计算，同时得到与完整 softmax 相同的结果。</p>
+<p>FlashAttention 因此同时使用了三类技巧：</p>
+<ul class="course-itemize"><li><p>对 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="QK^T"><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow></math></span> 和 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="PV"><mrow><mi>P</mi><mi>V</mi></mrow></math></span> 做 tiling，减少 global memory 访问；</p></li><li><p>融合乘法、指数和归一化，避免写出完整中间矩阵；</p></li><li><p>用 online softmax 维护跨 tile 的数值状态。</p></li></ul>
+</section>
+<section class="course-source-section level-4" id="lecture-05-heading-013-本章小结"><h4>本章小结</h4>
+<p>GPU 优化的核心是让计算单元持续得到数据：低精度减少 bytes，融合减少 kernel 间往返，重计算用 FLOPs 换内存，coalescing 和 tiling 提高访问效率。FlashAttention 把这些原则直接写进 attention 算法，因而在保持精确结果的同时显著降低 IO 成本。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-05-heading-014-总结与延伸"><h3>总结与延伸</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-05/figures/official_p55-c02e15ce.webp" alt="本讲关于 GPU 性能、数据移动和 FlashAttention 的总结" width="1800" height="1014" loading="lazy"><figcaption>本讲关于 GPU 性能、数据移动和 FlashAttention 的总结</figcaption></figure>
+<p>本讲建立了从硬件到算法的连续链路：GPU 以大量线程和 Tensor Core 提供计算，内存层次决定数据移动成本，Roofline 帮助定位瓶颈，低精度、融合、重计算、合并访问和 tiling 改变实际性能，FlashAttention 则把这些优化统一到 attention 的计算顺序中。</p>
+<p>下一讲会把这些 GPU 原则落实到 kernel 编程和编译系统。看到一个 PyTorch 表达式时，应该继续追问它会启动多少 kernel、读写多少 HBM、是否能融合、shape 是否适合 Tensor Core，以及是否值得用重计算换显存。</p>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-05-1">Dao et al., 2022. <em>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</em>. NeurIPS 2022. <a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener noreferrer">arXiv:2205.14135</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-05&section=course-footnote-ref-05-1" aria-label="返回正文">↩</a></li>
+</ol></section>

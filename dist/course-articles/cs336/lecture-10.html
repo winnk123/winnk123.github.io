@@ -1,0 +1,63 @@
+<section class="course-source-section level-3" id="lecture-10-heading-001-推理的工作负载"><h3>推理的工作负载</h3>
+<p>训练完成后，模型接收 prompt 并逐步生成 response。推理和训练的目标不同：训练追求总吞吐和稳定更新，推理同时关心单请求 latency、服务 throughput、显存容量、请求并发和输出质量。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_inference-schema-e8a6ead3.webp" alt="推理系统从模型和 prompt 产生 response 的基本流程" width="1498" height="519" loading="lazy"><figcaption>推理系统从模型和 prompt 产生 response 的基本流程</figcaption></figure>
+<p>推理成本会在每次用户请求、评测、agent 工具调用和 RL rollout 中重复发生。服务系统通常要在三个“快”之间折中：单请求响应快、批量吞吐高、单位 token 成本低。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-002-transformer-推理的维度与两阶段"><h3>Transformer 推理的维度与两阶段</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_transformer-diagram-6e4b7bff.webp" alt="Transformer 推理中 batch、sequence、head 和 hidden 维度" width="1499" height="1492" loading="lazy"><figcaption>Transformer 推理中 batch、sequence、head 和 hidden 维度</figcaption></figure>
+<p>推理可以分为 prefill 和 decode：prefill 一次处理整个 prompt，适合矩阵乘法并行；decode 每次生成一个 token，必须读取已有上下文的 KV cache，常常更接近 memory-bound。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_naive-inference-1400-458ab0ea.webp" alt="朴素自回归生成反复计算历史 token 的成本" width="1400" height="601" loading="lazy"><figcaption>朴素自回归生成反复计算历史 token 的成本</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_cached-inference-1400-a5892ed8.webp" alt="KV cache 避免重复计算历史 key/value" width="1400" height="704" loading="lazy"><figcaption>KV cache 避免重复计算历史 key/value</figcaption></figure>
+<p>KV cache 保存每层历史 token 的 key 和 value。第 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="t"><mrow><mi>t</mi></mrow></math></span> 步只计算新 token 的 query、key、value，并把新的 key/value 追加到 cache；代价是 cache 随 batch、序列长度、层数和 KV head 数增长。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-003-latency-throughput-与-batch-size"><h3>Latency、throughput 与 batch size</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_gmqa-5c47531f.webp" alt="生成阶段 attention 的计算、KV cache 和内存访问" width="1258" height="498" loading="lazy"><figcaption>生成阶段 attention 的计算、KV cache 和内存访问</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_gqa-speed-c74b2117.webp" alt="GQA 对 latency 和 throughput 的影响" width="789" height="490" loading="lazy"><figcaption>GQA 对 latency 和 throughput 的影响</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_gqa-accuracy-e3316110.webp" alt="减少 KV heads 时的质量与效率折中" width="1501" height="318" loading="lazy"><figcaption>减少 KV heads 时的质量与效率折中</figcaption></figure>
+<p>增大 batch 可以让 GPU 更充分，但会增加 KV cache 和单请求等待时间。静态 batching 要等一批请求准备好，动态/continuous batching 则在请求完成后立即填入新请求，更适合长度不同、到达时间不同的在线负载。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-004-减少-kv-cache-gqa-mla-与稀疏结构"><h3>减少 KV cache：GQA、MLA 与稀疏结构</h3>
+<p>GQA 让多个 query head 共享较少的 KV heads，MHA 和 MQA 是两端极端。MLA 更进一步，把 key/value 压缩成低维 latent cache，需要时再恢复用于 attention。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_mla-schema-fd8693aa.webp" alt="MLA 用 latent 表示压缩 KV cache" width="1800" height="510" loading="lazy"><figcaption>MLA 用 latent 表示压缩 KV cache</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_mla-accuracy-cb46985c.webp" alt="MLA 的质量实验" width="1800" height="642" loading="lazy"><figcaption>MLA 的质量实验</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_mla-accuracy2-5d4ff456.webp" alt="MLA 在不同设置下的效率和质量比较" width="912" height="298" loading="lazy"><figcaption>MLA 在不同设置下的效率和质量比较</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_cla-diagram-bdb00c3f.webp" alt="跨层 attention 共享或压缩 KV 的结构" width="795" height="820" loading="lazy"><figcaption>跨层 attention 共享或压缩 KV 的结构</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_cla-results-db216c7b.webp" alt="跨层 KV 压缩的实验结果" width="1119" height="838" loading="lazy"><figcaption>跨层 KV 压缩的实验结果</figcaption></figure>
+<p>局部和稀疏 attention 通过减少访问的历史位置降低长上下文成本。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_longformer-attention-d19d0f40.webp" alt="局部窗口与全局位置组合的稀疏 attention" width="1800" height="407" loading="lazy"><figcaption>局部窗口与全局位置组合的稀疏 attention</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_deepseek-v4-attention-7f821e97.webp" alt="新型 attention 组合压缩、稀疏选择和轻量索引" width="1726" height="871" loading="lazy"><figcaption>新型 attention 组合压缩、稀疏选择和轻量索引</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_1709770809-twitter-post-20-be826f37.webp" alt="推理架构设计需要同时考虑 cache、带宽和上下文长度" width="1100" height="440" loading="lazy"><figcaption>推理架构设计需要同时考虑 cache、带宽和上下文长度</figcaption></figure>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-005-量化-剪枝与蒸馏"><h3>量化、剪枝与蒸馏</h3>
+<p>量化把权重或激活从 FP16/BF16 转为更低位宽。PTQ 在训练后直接压缩，QAT 在训练时模拟量化误差；GPTQ 等方法利用 Hessian 或局部误差修正权重。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_awq-schema-667113c3.webp" alt="AWQ 保护对输出影响较大的激活通道" width="1800" height="445" loading="lazy"><figcaption>AWQ 保护对输出影响较大的激活通道</figcaption></figure>
+<p>AWQ 的直觉是少数 activation channels 对输出更敏感，应给予相应权重更高精度，其他权重则可以使用更低位宽。</p>
+<p>剪枝减少参数或结构，蒸馏用原模型作为 teacher 修复压缩后的能力：</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_pruning-kd-loop-d573b97b.webp" alt="剪枝、生成 teacher 输出和蒸馏训练的循环" width="1800" height="771" loading="lazy"><figcaption>剪枝、生成 teacher 输出和蒸馏训练的循环</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_pruning-kd-65a1f886.webp" alt="剪枝与知识蒸馏的组合流程" width="944" height="762" loading="lazy"><figcaption>剪枝与知识蒸馏的组合流程</figcaption></figure>
+<p>压缩方法之间存在取舍：量化主要减少 bytes，剪枝减少计算结构，蒸馏用额外训练成本换取小模型质量。最终目标是服务 latency、吞吐和成本，而不是单独最小化参数量。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-006-speculative-decoding"><h3>Speculative decoding</h3>
+<p>Speculative decoding 用小 draft model 先生成多个候选 token，再让大 target model 并行评估并接受其中一部分。接受规则经过校正后，最终分布与直接使用 target model 相同，因此它可以在不改变生成分布的情况下减少 target model 的串行步数。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_speculative-sampling-algorithm-127dec8a.webp" alt="draft model 生成候选、target model 并行验证的算法" width="1800" height="1275" loading="lazy"><figcaption>draft model 生成候选、target model 并行验证的算法</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_speculative-sampling-results-ffe928a2.webp" alt="Speculative decoding 的加速结果" width="1800" height="708" loading="lazy"><figcaption>Speculative decoding 的加速结果</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_speculative-sampling-stats-1c22defb.webp" alt="候选接受率与加速收益之间的关系" width="1800" height="760" loading="lazy"><figcaption>候选接受率与加速收益之间的关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_medusa-eagle-d1c55de2.webp" alt="Medusa/EAGLE 等多头或辅助 draft 预测结构" width="1168" height="397" loading="lazy"><figcaption>Medusa/EAGLE 等多头或辅助 draft 预测结构</figcaption></figure>
+<p>收益取决于 draft 质量、接受率、候选长度和 target model 的 batch 计算效率；draft 太弱会频繁拒绝，draft 太大又会消耗本可节省的计算。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-007-动态服务与-pagedattention"><h3>动态服务与 PagedAttention</h3>
+<p>在线请求的 prompt 长度、生成长度、到达时间和前缀共享情况都不同。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_cb_02_diagram-static-batching-873edbc6.webp" alt="静态 batching 在不同请求长度下的等待和填充浪费" width="1800" height="420" loading="lazy"><figcaption>静态 batching 在不同请求长度下的等待和填充浪费</figcaption></figure>
+<p>Continuous batching 在每轮调度中加入新完成请求，减少空闲 token。KV cache 的动态分配则面临内部碎片和外部碎片：连续为每个序列分配一大片内存，会造成空间浪费和扩展困难。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_paged-attention-fragmentation-b977ce60.webp" alt="KV cache 连续分配造成的内部和外部碎片" width="1800" height="313" loading="lazy"><figcaption>KV cache 连续分配造成的内部和外部碎片</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_paged-attention-blocks-58c0c3e4.webp" alt="PagedAttention 将 KV cache 切成固定大小 block" width="1240" height="570" loading="lazy"><figcaption>PagedAttention 将 KV cache 切成固定大小 block</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_paged-attention-logical-00403aca.webp" alt="逻辑序列到物理 KV block 的映射" width="1457" height="642" loading="lazy"><figcaption>逻辑序列到物理 KV block 的映射</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_paged-attention-sharing-6720e642.webp" alt="前缀共享和 copy-on-write 减少重复 KV" width="1595" height="637" loading="lazy"><figcaption>前缀共享和 copy-on-write 减少重复 KV</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-10/figures/official_paged-attention-parallel-d2ccf2a6.webp" alt="PagedAttention 在并发请求中的调度与并行" width="1496" height="688" loading="lazy"><figcaption>PagedAttention 在并发请求中的调度与并行</figcaption></figure>
+<p>PagedAttention 把逻辑序列和物理 block 分开，允许非连续分配、动态增长和前缀共享。共享 system prompt 或采样前缀时，多个请求可以引用相同 block，只有在分叉写入时才 copy-on-write。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-10-heading-008-总结与延伸"><h3>总结与延伸</h3>
+<p>推理优化可以沿四条主线组织：</p>
+<ul class="course-itemize"><li><p>减少重复计算：KV cache、GQA/MLA、prefix sharing；</p></li><li><p>减少每 token 计算和传输：量化、剪枝、稀疏 attention；</p></li><li><p>减少串行解码：speculative decoding 和辅助预测头；</p></li><li><p>提高服务利用率：continuous batching、PagedAttention 和动态调度。</p></li></ul>
+<p>训练阶段看重总 FLOPs，decode 阶段经常受 memory bandwidth 和 KV cache 约束；因此架构、硬件、内存布局和服务调度必须一起设计。下一讲回到 scaling laws，继续讨论如何用小实验预测更大训练。</p>
+</section>

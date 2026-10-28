@@ -1,0 +1,159 @@
+<section class="course-source-section level-3" id="lecture-04-heading-001-本讲的问题-如何降低长上下文与大模型的成本"><h3>本讲的问题：如何降低长上下文与大模型的成本</h3>
+<p>上一讲讨论了标准 Transformer 内部的归一化、激活、位置编码和注意力头。本讲进入更激进的架构变化：一类方法试图降低长上下文 attention 的二次成本，另一类方法利用稀疏激活让模型拥有更多参数而只为每个 token 计算一小部分专家。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p02-d0541535.webp" alt="长上下文扩大后 attention 成本快速增长的问题" width="1800" height="1014" loading="lazy"><figcaption>长上下文扩大后 attention 成本快速增长的问题</figcaption></figure>
+<p>标准 attention 对长度为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n"><mrow><mi>n</mi></mrow></math></span> 的序列形成 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n\times n"><mrow><mi>n</mi><mo>×</mo><mi>n</mi></mrow></math></span> 的交互矩阵。训练时可以并行计算，但计算量和中间存储随 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n^2"><mrow><msup><mi>n</mi><mn>2</mn></msup></mrow></math></span> 增长；增量生成时，KV cache 和每一步的数据读取又会成为瓶颈。常见工具箱包括滑动窗口、全局层与局部层交替、KV cache 压缩和系统级 kernel 优化。本讲继续追问：能否从架构层面改变这个复杂度。</p>
+<section class="course-source-section level-4" id="lecture-04-heading-002-本章小结"><h4>本章小结</h4>
+<p>注意力替代方案要在上下文覆盖、表达能力、训练并行性和推理成本之间折中；MoE 则在参数规模、激活计算和跨设备通信之间折中。两类方法都把稀疏性作为主要工具。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-003-线性注意力与递归状态"><h3>线性注意力与递归状态</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-004-利用矩阵乘法结合律"><h4>利用矩阵乘法结合律</h4>
+<p>抽象地写，attention 可以表示为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{Attn}(Q,K,V)=\rho(QK^T)V,"><mrow><mo>Attn</mo><mo stretchy="false">(</mo><mi>Q</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>V</mi><mo stretchy="false">)</mo><mo>=</mo><mi>ρ</mi><mo stretchy="false">(</mo><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup><mo stretchy="false">)</mo><mi>V</mi><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="Q,K\in\mathbb{R}^{n\times d_k}"><mrow><mi>Q</mi><mo>,</mo><mi>K</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><msub><mi>d</mi><mi>k</mi></msub></mrow></msup></mrow></math></span>，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="V\in\mathbb{R}^{n\times d_v}"><mrow><mi>V</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><msub><mi>d</mi><mi>v</mi></msub></mrow></msup></mrow></math></span>，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\rho"><mrow><mi>ρ</mi></mrow></math></span> 表示 softmax 或其他归一化。标准做法先计算 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="QK^T"><mrow><mi>Q</mi><msup><mi>K</mi><mi>T</mi></msup></mrow></math></span>，得到 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n\times n"><mrow><mi>n</mi><mo>×</mo><mi>n</mi></mrow></math></span> 的 token-token 矩阵，再乘 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="V"><mrow><mi>V</mi></mrow></math></span>。</p>
+<p>如果不使用 softmax，而直接利用结合律，可以重排为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Q(K^TV)."><mrow><mi>Q</mi><mo stretchy="false">(</mo><msup><mi>K</mi><mi>T</mi></msup><mi>V</mi><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<p>先计算 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="K^TV\in\mathbb{R}^{d_k\times d_v}"><mrow><msup><mi>K</mi><mi>T</mi></msup><mi>V</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><msub><mi>d</mi><mi>k</mi></msub><mo>×</mo><msub><mi>d</mi><mi>v</mi></msub></mrow></msup></mrow></math></span>，再让每个 query 与这个小矩阵相乘，主要计算量从依赖 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n^2"><mrow><msup><mi>n</mi><mn>2</mn></msup></mrow></math></span> 变为依赖 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n"><mrow><mi>n</mi></mrow></math></span>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p04-98695db5.webp" alt="线性注意力通过重排矩阵乘法避免显式构造 n×n 矩阵" width="1800" height="1014" loading="lazy"><figcaption>线性注意力通过重排矩阵乘法避免显式构造 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n\times n"><mrow><mi>n</mi><mo>×</mo><mi>n</mi></mrow></math></span> 矩阵</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p05-628a9ebd.webp" alt="线性注意力的递归状态表示" width="1800" height="1014" loading="lazy"><figcaption>线性注意力的递归状态表示</figcaption></figure>
+<p>令</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="S_t=\sum_{i\le t} k_i v_i^T, \qquad y_t=q_t^T S_t,"><mrow><msub><mi>S</mi><mi>t</mi></msub><mo>=</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>≤</mo><mi>t</mi></mrow></munder><msub><mi>k</mi><mi>i</mi></msub><msubsup><mi>v</mi><mi>i</mi><mi>T</mi></msubsup><mo>,</mo><mspace width="2em" /><msub><mi>y</mi><mi>t</mi></msub><mo>=</mo><msubsup><mi>q</mi><mi>t</mi><mi>T</mi></msubsup><msub><mi>S</mi><mi>t</mi></msub><mo>,</mo></mrow></math></figure>
+<p>则状态 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="S_t"><mrow><msub><mi>S</mi><mi>t</mi></msub></mrow></math></span> 可以递归更新：</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="S_t=S_{t-1}+k_tv_t^T."><mrow><msub><mi>S</mi><mi>t</mi></msub><mo>=</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>k</mi><mi>t</mi></msub><msubsup><mi>v</mi><mi>t</mi><mi>T</mi></msubsup><mo>.</mo></mrow></math></figure>
+<p>这使得每个位置只需要维护一个 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="d_k\times d_v"><mrow><msub><mi>d</mi><mi>k</mi></msub><mo>×</mo><msub><mi>d</mi><mi>v</mi></msub></mrow></math></span> 的状态，而不是保存所有 token 两两之间的 attention 矩阵。它的代价是表达能力发生变化：标准 softmax attention 可以根据当前 query 对不同历史 token 选择不同权重，简单线性状态则把历史压缩到固定大小的统计量中。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-005-混合-attention"><h4>混合 attention</h4>
+<p>线性注意力在长序列上具有吸引力，但并不意味着所有层都应替换为线性形式。Minimax M1 等模型采用多层线性 attention 与少量 full attention 的混合，例如七层线性 attention 配一层 full attention。full attention 提供更直接的 token-token 交互，线性层负责降低大部分上下文计算。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p06-0d384c56.webp" alt="线性注意力与 full attention 的层间混合" width="1800" height="1014" loading="lazy"><figcaption>线性注意力与 full attention 的层间混合</figcaption></figure>
+<p>混合比例是一个架构超参数：线性层越多，长上下文成本越低；full attention 越多，表达能力和短程建模通常更接近标准 Transformer。公开结果中常能看到相对稳定的性能，但严格消融仍然有限，因此需要把结果与训练预算、上下文长度和实现方式一起解释。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-006-从线性状态到-mamba-与-gated-deltanet"><h3>从线性状态到 Mamba 与 Gated DeltaNet</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-007-mamba-2-给状态更新增加选择性"><h4>Mamba-2：给状态更新增加选择性</h4>
+<p>纯线性 attention 的状态更新对每个 token 都是简单累加。Mamba-2 可以看作在状态空间或线性 attention 视角中加入位置相关的衰减和选择，让模型决定哪些历史信息保留、哪些信息快速忘记<sup class="course-footnote-ref" id="course-footnote-ref-04-1"><a href="#courses?lecture=lecture-04&section=course-footnote-04-1">1</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p07-21d17d1d.webp" alt="Mamba-2 从线性状态更新推广到带选择性的状态空间形式" width="1800" height="1014" loading="lazy"><figcaption>Mamba-2 从线性状态更新推广到带选择性的状态空间形式</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-008-gated-deltanet"><h4>Gated DeltaNet</h4>
+<p>Gated DeltaNet 进一步同时控制输入写入和旧状态保留。一个抽象形式是</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="S_t=\gamma_t S_{t-1}+k_tv_t^T, \qquad y_t=q_t^TS_t+v_t^{\rm residual},"><mrow><msub><mi>S</mi><mi>t</mi></msub><mo>=</mo><msub><mi>γ</mi><mi>t</mi></msub><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>k</mi><mi>t</mi></msub><msubsup><mi>v</mi><mi>t</mi><mi>T</mi></msubsup><mo>,</mo><mspace width="2em" /><msub><mi>y</mi><mi>t</mi></msub><mo>=</mo><msubsup><mi>q</mi><mi>t</mi><mi>T</mi></msubsup><msub><mi>S</mi><mi>t</mi></msub><mo>+</mo><msubsup><mi>v</mi><mi>t</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi></mrow></msubsup><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\gamma_t"><mrow><msub><mi>γ</mi><mi>t</mi></msub></mrow></math></span> 可以按位置决定遗忘程度。门控让模型有机会选择性擦除状态，而不是永远把所有历史信息累加到同一个矩阵中。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p09-730d9a0a.webp" alt="Gated DeltaNet 通过门控衰减和增量更新选择性保留状态" width="1800" height="1014" loading="lazy"><figcaption>Gated DeltaNet 通过门控衰减和增量更新选择性保留状态</figcaption></figure>
+<p>这类方法的共同视角是：长上下文不一定要保存所有 token 的显式 pairwise 关系，也可以把历史压缩成可更新状态。它们的主要研究问题转化为状态容量、门控函数、训练并行化和与 full attention 的混合方式。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-009-本章小结"><h4>本章小结</h4>
+<p>线性 attention 用结合律把二次矩阵计算改成递归状态，Mamba-2 和 Gated DeltaNet 再加入选择性更新。混合架构用少量 full attention 保留精确交互，试图在表达能力与长上下文效率之间取得平衡。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-010-稀疏注意力-dsa"><h3>稀疏注意力：DSA</h3>
+<p>另一条路线保留 attention 的基本形式，但不让每个 query 访问所有历史 token。DeepSeek Sparse Attention（DSA）使用轻量 indexer，先估计哪些 token 值得访问，再只在候选位置上执行更昂贵的 attention。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p12-ce6ad9c9.webp" alt="DSA 通过轻量 indexer 选择值得进行 attention 的历史位置" width="1800" height="1014" loading="lazy"><figcaption>DSA 通过轻量 indexer 选择值得进行 attention 的历史位置</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-04-heading-011-indexer-与稀疏访问"><h4>Indexer 与稀疏访问</h4>
+<p>一个稀疏 attention 管线可以分成两步：</p>
+<ol class="course-enumerate"><li><p>indexer 用较低成本的表示估计 query 对历史 token 的相关性；</p></li><li><p>主 attention 只对选出的 top-<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span> 或结构化候选计算精确 score 和 value 聚合。</p></li></ol>
+<p>如果 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k\ll n"><mrow><mi>k</mi><mo>≪</mo><mi>n</mi></mrow></math></span>，主 attention 的访问量从全部上下文降到选中的少数位置。indexer 的质量决定稀疏化损失，过于激进的筛选会丢掉长距离信息，过于宽松则无法带来明显收益。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p13-19075bf8.webp" alt="DSA 的 indexer、候选选择与主 attention 结构" width="1800" height="1014" loading="lazy"><figcaption>DSA 的 indexer、候选选择与主 attention 结构</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-012-后训练适配与成本"><h4>后训练适配与成本</h4>
+<p>稀疏 attention 也可以作为对已有 dense 模型的后续适配：先保留模型的短上下文能力，再训练或微调 indexer 和稀疏计算路径。这样可以减少从头训练新架构的成本，但需要验证稀疏模式是否与原模型的表示分布匹配。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-013-moe-用稀疏激活扩大参数量"><h3>MoE：用稀疏激活扩大参数量</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-014-基本结构"><h4>基本结构</h4>
+<p>Mixture of Experts 把一个大 FFN 替换成多个专家 FFN，再增加一个 router 为每个 token 选择少量专家。若有 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="E"><mrow><mi>E</mi></mrow></math></span> 个专家、每个 token 只激活 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span> 个专家，则总参数量可以随 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="E"><mrow><mi>E</mi></mrow></math></span> 增加，而单个 token 的主要 FFN 计算只与 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span> 个专家有关<sup class="course-footnote-ref" id="course-footnote-ref-04-2"><a href="#courses?lecture=lecture-04&section=course-footnote-04-2">2</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p15-c250dd96.webp" alt="MoE 用多个专家 FFN 和 router 替换单一大 FFN" width="1800" height="1014" loading="lazy"><figcaption>MoE 用多个专家 FFN 和 router 替换单一大 FFN</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p16-e08aaee4.webp" alt="在近似相同激活计算下增加专家参数量的收益" width="1800" height="1014" loading="lazy"><figcaption>在近似相同激活计算下增加专家参数量的收益</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p17-8eb59b30.webp" alt="MoE 训练速度与 dense 模型的比较" width="1800" height="1014" loading="lazy"><figcaption>MoE 训练速度与 dense 模型的比较</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p18-e807f60b.webp" alt="MoE 与 dense 模型的性能比较" width="1800" height="1014" loading="lazy"><figcaption>MoE 与 dense 模型的性能比较</figcaption></figure>
+<p>MoE 受欢迎的原因包括：</p>
+<ul class="course-itemize"><li><p>在相近激活 FLOPs 下拥有更多总参数；</p></li><li><p>专家可以分布到多个设备，扩大模型容量；</p></li><li><p>token 只访问部分专家，计算和参数量解耦；</p></li><li><p>公开模型结果显示，MoE 已经成为高性能开放模型中的常见结构。</p></li></ul>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p20-b7a4f8dc.webp" alt="不同开放模型中的 MoE 使用情况" width="1800" height="1014" loading="lazy"><figcaption>不同开放模型中的 MoE 使用情况</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p23-f1f02db1.webp" alt="DeepSeek 等模型中的大规模 MoE 结果" width="1800" height="1014" loading="lazy"><figcaption>DeepSeek 等模型中的大规模 MoE 结果</figcaption></figure>
+<p>代价也很直接：router 是离散选择，专家之间需要 all-to-all 通信，token 分布不均会造成设备空转或容量溢出，微调时小数据还可能让专家过拟合。MoE 的优势必须和通信、负载均衡和训练稳定性一起计算。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-015-本章小结"><h4>本章小结</h4>
+<p>MoE 通过稀疏激活让总参数量大于单 token 的激活计算量。它的核心不是“免费增加参数”，而是把参数容量、路由选择、设备通信和训练目标放进同一系统设计中。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-016-moe-路由-从-top-k-到共享专家"><h3>MoE 路由：从 top-k 到共享专家</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-017-路由问题的形式化"><h4>路由问题的形式化</h4>
+<p>给定 token 表示 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="x"><mrow><mi>x</mi></mrow></math></span> 和 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="E"><mrow><mi>E</mi></mrow></math></span> 个专家，router 产生 logits <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="g(x)\in\mathbb{R}^E"><mrow><mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>∈</mo><msup><mi>ℝ</mi><mi>E</mi></msup></mrow></math></span>。最常见的 token-choice top-k 路由选择</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\mathcal{I}(x)=\operatorname{TopK}(g(x),k),"><mrow><mi>ℐ</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mo>TopK</mo><mo stretchy="false">(</mo><mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>,</mo><mi>k</mi><mo stretchy="false">)</mo><mo>,</mo></mrow></math></figure>
+<p>再对选中专家的权重做归一化，输出为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="y=\sum_{e\in\mathcal{I}(x)}p_e(x)E_e(x)."><mrow><mi>y</mi><mo>=</mo><munder><mo>∑</mo><mrow><mi>e</mi><mo>∈</mo><mi>ℐ</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></munder><msub><mi>p</mi><mi>e</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><msub><mi>E</mi><mi>e</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<p>选择通常不可微，因此训练 router 需要随机近似、辅助损失或其他启发式。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p25-dc61265b.webp" alt="MoE 中典型的专家路由和结构选择" width="1800" height="1014" loading="lazy"><figcaption>MoE 中典型的专家路由和结构选择</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p27-71b68f12.webp" alt="token-choice、expert-choice 与全局路由的基本区别" width="1800" height="1014" loading="lazy"><figcaption>token-choice、expert-choice 与全局路由的基本区别</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p29-bc32cd44.webp" alt="Switch、GShard、Mixtral 和 DeepSeek 等 top-k 路由配置" width="1800" height="1014" loading="lazy"><figcaption>Switch、GShard、Mixtral 和 DeepSeek 等 top-k 路由配置</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p31-07cdbad1.webp" alt="top-k router 的 gate、选择和专家聚合过程" width="1800" height="1014" loading="lazy"><figcaption>top-k router 的 gate、选择和专家聚合过程</figcaption></figure>
+<p>Switch Transformer 使用 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k=1"><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow></math></span>，GShard、Grok 和 Mixtral 常用 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k=2"><mrow><mi>k</mi><mo>=</mo><mn>2</mn></mrow></math></span>，其他模型可能使用更大的 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span>。<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span> 越大，token 可以获得更多专家的组合表达，但计算、通信和容量管理也更复杂。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-018-细粒度专家与共享专家"><h4>细粒度专家与共享专家</h4>
+<p>近年的 DeepSeek 和 Qwen 配方常把专家做得更细，并加入少量 shared experts。shared experts 对每个 token 都激活，负责学习跨领域的共同模式；fine-grained experts 则通过路由学习更专门的模式。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p32-f4bf00f0.webp" alt="共享专家与细粒度专家共同构成的现代 MoE 层" width="1800" height="1014" loading="lazy"><figcaption>共享专家与细粒度专家共同构成的现代 MoE 层</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p33-dcb9151c.webp" alt="增加专家数量、共享专家和细粒度路由的消融方向" width="1800" height="1014" loading="lazy"><figcaption>增加专家数量、共享专家和细粒度路由的消融方向</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p35-971b88e3.webp" alt="不同 MoE 模型的专家、激活数量与共享专家配置" width="1800" height="1014" loading="lazy"><figcaption>不同 MoE 模型的专家、激活数量与共享专家配置</figcaption></figure>
+<p>共享专家不是普遍有效的定理：DeepSeek 的实验显示它们有帮助，OlMoE 的消融则强调细粒度专家而未观察到同样的 shared-expert 收益。专家粒度和共享方式仍然需要在具体模型上验证。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-019-本章小结"><h4>本章小结</h4>
+<p>大多数实用 MoE 使用简单的 top-k token-choice 路由。真正影响结果的细节包括 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="k"><mrow><mi>k</mi></mrow></math></span>、专家容量、路由概率、共享专家、细粒度专家和负载均衡目标。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-020-moe-训练-离散路由与负载均衡"><h3>MoE 训练：离散路由与负载均衡</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-021-为什么路由难训练"><h4>为什么路由难训练</h4>
+<p>router 的 top-k 选择是离散操作，直接改变专家接收哪些 token，梯度不能像普通矩阵乘法那样平滑地穿过选择过程。理论上可以用 REINFORCE 学习路由策略，但梯度方差和系统复杂度较高，实际模型更多使用可微的 softmax logits 加启发式负载控制。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p36-9f1c12b5.webp" alt="MoE 路由不可微以及训练方案的主要选择" width="1800" height="1014" loading="lazy"><figcaption>MoE 路由不可微以及训练方案的主要选择</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p38-79601694.webp" alt="通过随机扰动让专家路由获得更平滑的训练信号" width="1800" height="1014" loading="lazy"><figcaption>通过随机扰动让专家路由获得更平滑的训练信号</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p40-08cbfff6.webp" alt="Switch Transformer 的辅助负载均衡损失" width="1800" height="1014" loading="lazy"><figcaption>Switch Transformer 的辅助负载均衡损失</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p42-9bc5ee1c.webp" alt="DeepSeek 通过专家偏置实现辅助损失自由的平衡" width="1800" height="1014" loading="lazy"><figcaption>DeepSeek 通过专家偏置实现辅助损失自由的平衡</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-022-负载均衡"><h4>负载均衡</h4>
+<p>如果 router 把大量 token 集中到少数专家，热门专家会溢出或成为瓶颈，其他专家则空闲。一个典型辅助损失同时惩罚 token 分配比例和 router 概率集中度，使每个 batch 的专家负载更接近均匀。</p>
+<p>但负载均衡也有代价：强行均匀可能压制 router 形成有意义的专家分工，辅助损失的权重过大还会影响主任务。DeepSeek V3 使用 per-expert bias 和在线更新，让偏置调整专家被选择的倾向，从而减少显式 auxiliary loss。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-023-moe-系统-通信-稳定性与微调"><h3>MoE 系统：通信、稳定性与微调</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-024-专家并行与稀疏矩阵乘法"><h4>专家并行与稀疏矩阵乘法</h4>
+<p>MoE 的专家可以放在不同设备上。token 路由后需要 all-to-all，把 token 发送到对应专家，再把输出发送回原设备。专家并行提高了参数容量，但通信量和 token 排序会成为新的系统瓶颈。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p44-8e262fb1.webp" alt="MoE 专家并行和设备间通信的系统结构" width="1800" height="1014" loading="lazy"><figcaption>MoE 专家并行和设备间通信的系统结构</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p45-47298f57.webp" alt="稀疏矩阵乘法与现代 MoE 库的实现问题" width="1800" height="1014" loading="lazy"><figcaption>稀疏矩阵乘法与现代 MoE 库的实现问题</figcaption></figure>
+<p>MegaBlocks 等系统使用结构化稀疏矩阵乘法，把不同专家收到的 token 组织为可高效执行的块。模型架构和硬件 kernel 必须共同设计：如果 token 分配太碎，即使理论 FLOPs 很低，实际 GPU 利用率也可能很差。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-025-稳定性与微调"><h4>稳定性与微调</h4>
+<p>router logits 对数值尺度很敏感。实践中常让 router 使用 FP32，必要时配合 z-loss 或其他稳定化处理。MoE 在小规模微调数据上也更容易过拟合，因为每个专家只看到一部分样本；一种做法是微调 dense MLP，另一种是提供足够多的 SFT 数据覆盖专家。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p48-4c200a1e.webp" alt="MoE router 的数值稳定性问题" width="1800" height="1014" loading="lazy"><figcaption>MoE router 的数值稳定性问题</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p50-257a2fce.webp" alt="稀疏 MoE 在小规模微调中的过拟合风险" width="1800" height="1014" loading="lazy"><figcaption>稀疏 MoE 在小规模微调中的过拟合风险</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-026-本章小结"><h4>本章小结</h4>
+<p>MoE 的系统收益取决于专家并行和高效稀疏 kernel；训练收益取决于路由稳定、负载均衡和足够的数据覆盖。没有这些配套，稀疏激活可能只留下通信和调度成本。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-027-upcycling-与-deepseek-moe-演进"><h3>Upcycling 与 DeepSeek MoE 演进</h3>
+<section class="course-source-section level-4" id="lecture-04-heading-028-从-dense-模型初始化-moe"><h4>从 dense 模型初始化 MoE</h4>
+<p>Upcycling 尝试把已经训练好的 dense FFN 复制或拆分成多个专家，再继续训练 MoE。这样可以复用 dense 模型已经学到的表示，减少从随机初始化训练全新专家的成本。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p52-23f90b20.webp" alt="从预训练 dense 模型 upcycling 到 MoE 的示例" width="1800" height="1014" loading="lazy"><figcaption>从预训练 dense 模型 upcycling 到 MoE 的示例</figcaption></figure>
+<p>成功的 upcycling 需要解决专家初始化、路由冷启动、负载均衡和训练数据覆盖等问题。它让 MoE 成为已有模型的扩展路径，而不只是从零训练的架构。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-029-deepseek-v1-到-v3"><h4>DeepSeek V1 到 V3</h4>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p54-cfcb86b4.webp" alt="DeepSeek MoE V1 的共享专家与细粒度专家结构" width="1800" height="1014" loading="lazy"><figcaption>DeepSeek MoE V1 的共享专家与细粒度专家结构</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p55-c02e15ce.webp" alt="DeepSeek MoE V2 的专家和设备路由改进" width="1800" height="1014" loading="lazy"><figcaption>DeepSeek MoE V2 的专家和设备路由改进</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p56-a9763f96.webp" alt="DeepSeek MoE V3 的路由、共享专家和负载平衡设计" width="1800" height="1014" loading="lazy"><figcaption>DeepSeek MoE V3 的路由、共享专家和负载平衡设计</figcaption></figure>
+<p>DeepSeek 的演进可以看成多个方向的组合：专家数量和粒度不断增加，shared experts 保留共同能力，top-k 与 top-M 路由同时控制 token 选择和设备通信，负载均衡逐步减少对显式 auxiliary loss 的依赖。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-04-heading-030-mla-与-mtp-的配套设计"><h4>MLA 与 MTP 的配套设计</h4>
+<p>DeepSeek V3 不只有 MoE。Multi-head Latent Attention（MLA）把 query、key、value 表示压缩到低维 latent，使 KV cache 只保存更紧凑的状态；Multi-Token Prediction（MTP）则用轻量预测头提供额外的未来 token 训练信号或推理辅助。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p57-27125fd5.webp" alt="DeepSeek V3 中 MLA 低维 latent 表示的基本思想" width="1800" height="1014" loading="lazy"><figcaption>DeepSeek V3 中 MLA 低维 latent 表示的基本思想</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p58-02d6baa7.webp" alt="MLA 对 KV cache 存储和推理效率的影响" width="1800" height="1014" loading="lazy"><figcaption>MLA 对 KV cache 存储和推理效率的影响</figcaption></figure>
+<p>这些组件说明，现代模型的系统表现来自架构组合。MoE 减少激活计算，MLA 减少 KV cache，MTP 改变监督和推理接口；单独比较某一组件时，需要保持其他资源和训练条件一致。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-04-heading-031-总结与延伸"><h3>总结与延伸</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-04/figures/official_p60-3c4b6448.webp" alt="attention alternatives 与 MoE 的课程总结" width="1800" height="1014" loading="lazy"><figcaption>attention alternatives 与 MoE 的课程总结</figcaption></figure>
+<p>本讲的两条主线都在利用稀疏性：</p>
+<ul class="course-itemize"><li><p>线性 attention、Mamba 和 Gated DeltaNet 把历史 token 压缩成递归状态；DSA 通过 indexer 只访问部分历史位置；</p></li><li><p>MoE 让每个 token 只激活部分专家，从而把总参数量与单 token 计算量分开。</p></li></ul>
+<p>这些方法没有消除代价，而是把代价转移到新的位置：线性状态牺牲部分显式 token-token 交互，稀疏 attention 依赖 indexer，MoE 需要路由、负载均衡和跨设备通信。判断架构是否更好，必须同时看模型质量、上下文长度、训练吞吐、推理延迟、显存和系统复杂度。</p>
+<p>下一讲进入 GPU、TPU、kernel 和编译系统。它会解释为什么理论上更省 FLOPs 的稀疏架构，仍可能因数据布局和通信而运行更慢。</p>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-04-1">Dao and Gu, 2024. <em>Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality</em>. ICML 2024. <a href="https://arxiv.org/abs/2405.21060" target="_blank" rel="noopener noreferrer">arXiv:2405.21060</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-04&section=course-footnote-ref-04-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-04-2">Fedus, Zoph, and Shazeer, 2022. <em>Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</em>. JMLR 2022. <a href="https://jmlr.org/papers/v23/21-0998.html" target="_blank" rel="noopener noreferrer">JMLR 论文页</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-04&section=course-footnote-ref-04-2" aria-label="返回正文">↩</a></li>
+</ol></section>

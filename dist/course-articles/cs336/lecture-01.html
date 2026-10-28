@@ -1,0 +1,154 @@
+<section class="course-source-section level-3" id="lecture-01-heading-001-课程的出发点-从零理解语言模型"><h3>课程的出发点：从零理解语言模型</h3>
+<p>CS336 的主题不是调用一个已经训练好的模型，而是理解一个语言模型从数据、分词、架构、训练到部署的完整链路。Percy Liang 在开场把这门课定位为 2026 年春季的第三次开设：课程继续坚持 “from scratch” 的理念，同时根据模型生态的变化增加 mixture of experts、长上下文和 agents 等内容。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_course-staff-053da787.webp" alt="CS336 课程团队与本学期的课程定位" width="1164" height="283" loading="lazy"><figcaption>CS336 课程团队与本学期的课程定位</figcaption></figure>
+<p>课程的核心假设是：<strong>理解一个系统最可靠的方式，是亲手构建它的关键部分</strong>。这里的“从零”并不意味着实现所有底层软件，而是选择那些最能解释模型行为和工程取舍的环节。课程希望学生在实现过程中同时获得三类能力：</p>
+<ul class="course-itemize"><li><p><strong>Mechanics：机制。</strong>知道张量、Transformer、优化器、GPU kernel 和并行策略具体怎样工作；</p></li><li><p><strong>Mindset：思维方式。</strong>能够进行资源核算，观察计算、显存、通信和数据之间的约束；</p></li><li><p><strong>Intuitions：直觉。</strong>通过实验理解哪些架构、数据和训练决策有效，但知道这些经验未必能直接跨规模迁移。</p></li></ul>
+<section class="course-source-section level-4" id="lecture-01-heading-002-为什么不能只停留在-api-层"><h4>为什么不能只停留在 API 层</h4>
+<p>语言模型研究经历了明显的抽象层次变化。过去，研究者经常自己实现并训练模型；BERT 之后，常见做法变成下载预训练模型再微调；现在，很多任务可以直接通过 API prompting 完成。更高层抽象通常能提高生产力，但它们并不完全封装底层行为：当模型无法完成任务时，使用者可能没有办法判断问题来自数据、分词器、架构、优化、推理系统还是评估方式。</p>
+<p>对于基础研究，能够拆开这些层次很重要。只有知道每个组件的工作条件，才能提出超出既有 API 的研究问题，也才能判断某个实验结果是算法改进还是资源配置变化造成的。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-003-工业化带来的尺度鸿沟"><h4>工业化带来的尺度鸿沟</h4>
+<p>前沿模型的训练已经成为大型基础设施项目。课程用工业化生产的历史图像引出这种变化：模型训练从单个研究者可以直接控制的实验，变成需要大规模 GPU 集群、数据工程和系统优化协同完成的流程。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_industrialisation-e4f0fd38.webp" alt="语言模型训练从研究实验走向大规模工业化" width="739" height="415" loading="lazy"><figcaption>语言模型训练从研究实验走向大规模工业化</figcaption></figure>
+<p>GPT-4 技术报告明确说明，出于竞争和安全等原因，报告没有公开模型规模、硬件、训练计算量、数据集构造和训练方法等细节<sup class="course-footnote-ref" id="course-footnote-ref-01-1"><a href="#courses?lecture=lecture-01&section=course-footnote-01-1">1</a></sup>。这造成了一个实际困难：我们可以使用小模型做实验，却未必知道小模型上的经验能否代表前沿模型。</p>
+<p>课程用两个例子具体说明尺度差异。首先，随着模型增大，attention 和 MLP 所占的 FLOPs 比例会变化；在小模型上优化某个组件得到的收益，到了大模型上可能不再是主要瓶颈。其次，一些能力随着规模变化并不平滑，模型可能在达到一定规模后才表现出 few-shot 或复杂推理能力。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_gpt4-no-details-4c9397f1.webp" alt="GPT-4 技术报告对未公开训练细节的说明" width="1115" height="444" loading="lazy"><figcaption>GPT-4 技术报告对未公开训练细节的说明</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_roller-flops-8d8eeaaa.webp" alt="不同模型规模下 attention 与 MLP 的计算占比" width="600" height="474" loading="lazy"><figcaption>不同模型规模下 attention 与 MLP 的计算占比</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_wei-emergence-plot-1e3df4c1.webp" alt="能力随模型规模变化时可能出现的非平滑现象" width="777" height="549" loading="lazy"><figcaption>能力随模型规模变化时可能出现的非平滑现象</figcaption></figure>
+<p>因此，课程把“可迁移的机制”和“需要重新实验的经验”区分开来。张量运算、梯度下降和硬件通信通常可以从小实验中理解；数据混合、初始化和架构细节的最优选择，则需要结合目标规模重新验证。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-004-理论不足与实验判断"><h4>理论不足与实验判断</h4>
+<p>语言模型中有许多有效的设计并没有完整的第一性原理解释。课程以 SwiGLU 为例：即使一个激活函数已经在大规模实验中显示出优势，论文作者也可能无法给出令人满意的理论说明<sup class="course-footnote-ref" id="course-footnote-ref-01-2"><a href="#courses?lecture=lecture-01&section=course-footnote-01-2">2</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_divine-benevolence-58d7cd41.webp" alt="关于经验性架构选择缺乏完整理论解释的课堂材料" width="1267" height="245" loading="lazy"><figcaption>关于经验性架构选择缺乏完整理论解释的课堂材料</figcaption></figure>
+<p>这并不意味着实验可以替代理论，而是说明工程研究需要同时记录假设、资源条件和失败结果。一个设计是否有效，不能脱离参数规模、训练 token 数、硬件和评价指标来讨论。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-005-本章小结"><h4>本章小结</h4>
+<p>CS336 通过构建关键组件来恢复对语言模型的底层控制。课程承认小规模实验与前沿训练之间存在尺度鸿沟，因此把机制、资源意识和实验直觉分开处理，并要求在具体资源条件下解释每个结论。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-01-heading-006-语言模型生态的演进"><h3>语言模型生态的演进</h3>
+<section class="course-source-section level-4" id="lecture-01-heading-007-从统计语言模型到-transformer"><h4>从统计语言模型到 Transformer</h4>
+<p>语言模型的基本任务是给定上下文预测下一个符号。若序列为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="x_{1:T}"><mrow><msub><mi>x</mi><mrow><mn>1</mn><mi>:</mi><mi>T</mi></mrow></msub></mrow></math></span>，自回归语言模型把联合概率分解为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="p(x_{1:T})=\prod_{t=1}^{T}p(x_t\mid x_{&lt;t}),"><mrow><mi>p</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mrow><mn>1</mn><mi>:</mi><mi>T</mi></mrow></msub><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>T</mi></mrow></munderover><mi>p</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>∣</mo><msub><mi>x</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo><mo>,</mo></mrow></math></figure>
+<p>训练目标通常是最小化负对数似然或交叉熵。模型形态在过去十多年中不断变化，但这个基本目标仍然贯穿课程。</p>
+<p>早期工作使用 n-gram 统计上下文；神经语言模型随后用连续向量表示词和上下文<sup class="course-footnote-ref" id="course-footnote-ref-01-3"><a href="#courses?lecture=lecture-01&section=course-footnote-01-3">3</a></sup>。LSTM 通过门控状态处理更长依赖<sup class="course-footnote-ref" id="course-footnote-ref-01-4"><a href="#courses?lecture=lecture-01&section=course-footnote-01-4">4</a></sup>，attention 和 Transformer 则进一步改变了序列建模与并行计算的方式<sup class="course-footnote-ref" id="course-footnote-ref-01-5"><a href="#courses?lecture=lecture-01&section=course-footnote-01-5">5</a></sup>。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-008-预训练-提示与-agent"><h4>预训练、提示与 agent</h4>
+<p>课程用一条简短的历史线索说明模型与用户的关系发生了变化：</p>
+<ol class="course-enumerate"><li><p>ELMo 和 BERT 代表预训练后针对下游任务微调的阶段；</p></li><li><p>GPT-2 展示了更强的生成能力和早期的 zero-shot 迹象；</p></li><li><p>GPT-3 将 in-context learning 和 prompting 推到前台；</p></li><li><p>ChatGPT 让模型成为对话系统；</p></li><li><p>现代 agent 则让模型读取环境、调用工具并执行多步任务。</p></li></ol>
+<p>这些变化没有消除底层机制。模型仍然需要表示 token、计算 attention 或其替代形式、进行梯度优化，并在硬件上高效运行。改变的是上下文长度、推理预算、数据形式和系统接口。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-009-开放模型与可复现性"><h4>开放模型与可复现性</h4>
+<p>前沿闭源模型的细节不完整公开，因此开放模型生态对课程十分重要。课程材料列出 Llama、DeepSeek、Qwen、OLMo 和 Marin 等项目。它们在不同程度上公开权重、代码或训练报告，共同扩大了研究对象。</p>
+<p>开放程度并不等于每个细节都可复现；数据配方、硬件和训练过程仍可能缺失。即便如此，研究者仍然可以比较公开配方、检查假设并构建新的实验。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_pile_chart2-b4276cc6.webp" alt="The Pile 所代表的开放、多来源模型数据生态" width="1231" height="761" loading="lazy"><figcaption>The Pile 所代表的开放、多来源模型数据生态</figcaption></figure>
+<p>课程在这里强调的不是列举模型名称，而是研究条件的变化：当权重、数据和训练代码逐渐公开时，研究者可以把模型当作可拆解的系统；当数据配方或硬件细节仍然缺失时，比较结果就必须保留相应的不确定性。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-010-本章小结"><h4>本章小结</h4>
+<p>语言模型从统计模型、神经网络、预训练模型发展到对话和 agent 系统，但自回归建模、优化和资源约束仍然构成共同基础。开放模型生态扩大了可研究对象，也让课程能够围绕完整训练链路组织实验。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-01-heading-011-课程结构-把资源效率贯穿全流程"><h3>课程结构：把资源效率贯穿全流程</h3>
+<p>课程的作业和讲次被组织为一条完整工程链路。第一项作业从 BPE、Transformer、损失函数、优化器和训练步骤开始；后续内容进入 kernel、GPU、并行、推理、scaling laws、数据处理和 alignment。每个模块都围绕同一个问题展开：在固定的数据、计算、显存和通信预算下，怎样得到更好的模型。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_transformer-architecture-27705705.webp" alt="课程所涉及的 Transformer 结构组成" width="965" height="837" loading="lazy"><figcaption>课程所涉及的 Transformer 结构组成</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-01-heading-012-训练目标与工程取舍"><h4>训练目标与工程取舍</h4>
+<p>一个语言模型的效果不能只由参数量决定。训练过程还需要决定：</p>
+<ul class="course-itemize"><li><p>tokenization 如何表示文本，以及固定上下文中能容纳多少信息；</p></li><li><p>模型架构如何在表达能力、稳定性和计算量之间取舍；</p></li><li><p>优化器、初始化、学习率、正则化和 batch size 如何影响训练稳定性；</p></li><li><p>数据怎样过滤、混合和重复使用；</p></li><li><p>系统怎样把计算映射到 GPU、显存和多机通信。</p></li></ul>
+<p>这些决策之间存在耦合。例如，tokenizer 改变序列长度，序列长度影响 attention 计算和显存；架构改变参数和激活的形状，进而改变 kernel 和并行策略；数据质量决定有限 FLOPs 是否被用于有价值的训练信号。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-013-资源核算的基本视角"><h4>资源核算的基本视角</h4>
+<p>课程下一讲会系统讨论 resource accounting。训练一个模型时，至少需要追踪参数、梯度、优化器状态、激活和输入数据分别占用多少内存。对于一个参数量为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="N"><mrow><mi>N</mi></mrow></math></span>、训练 token 数为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 的 dense Transformer，常用的训练 FLOPs 估算是</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="C\approx 6ND."><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mi>N</mi><mi>D</mi><mo>.</mo></mrow></math></figure>
+<p>其中系数 6 来自前向和反向传播中矩阵乘法的大致计算量；实际系数会随架构、序列长度、实现和是否计入其他操作而变化。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_compute-memory-c0e6a8c2.webp" alt="训练系统中的计算、显存与数据移动之间的关系" width="709" height="621" loading="lazy"><figcaption>训练系统中的计算、显存与数据移动之间的关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_dgx-b200-system-topology-595ed220.webp" alt="多 GPU 系统中的 GPU、互联与主机拓扑" width="805" height="461" loading="lazy"><figcaption>多 GPU 系统中的 GPU、互联与主机拓扑</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_prefill-decode-1f0ebcec.webp" alt="推理系统中 prefill 与 decode 阶段的不同资源特征" width="647" height="248" loading="lazy"><figcaption>推理系统中 prefill 与 decode 阶段的不同资源特征</figcaption></figure>
+<p>GPU 的峰值 FLOP/s 并不等于程序实际速度。数据需要在存储层级之间移动，GPU 还要通过互联交换参数、激活或梯度；如果一次操作读取的数据太多，瓶颈可能是内存带宽而不是算力。后面的 kernel、并行和推理章节会把这种资源核算具体化。</p>
+<p>Scaling laws 提供了另一种节省资源的方法：先在小规模模型上测量损失随参数、数据和计算量的变化，再预测更大训练的趋势。课程后续会讨论 Kaplan 等人的经典 scaling law 和 Chinchilla 的 compute-optimal 结果，核心问题是如何在模型大小与训练 token 数之间分配固定计算预算<sup class="course-footnote-ref" id="course-footnote-ref-01-6"><a href="#courses?lecture=lecture-01&section=course-footnote-01-6">6</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_chinchilla-isoflop-1c758e02.webp" alt="固定计算预算下模型规模与训练 token 数的关系" width="1800" height="541" loading="lazy"><figcaption>固定计算预算下模型规模与训练 token 数的关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_hduervvbsaaq5yt-820ef4ce.webp" alt="Marin 项目的大规模训练实验与预测结果" width="1800" height="1080" loading="lazy"><figcaption>Marin 项目的大规模训练实验与预测结果</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-014-课程各部分的关系"><h4>课程各部分的关系</h4>
+<dl class="course-description"><dt>Basics</dt><dd><p>分词、Transformer、损失函数、优化器和训练循环构成可运行的最小语言模型。</p></dd><dt>Systems</dt><dd><p>kernel、GPU、并行和推理解释如何在实际硬件上高效运行这个模型。</p></dd><dt>Scaling laws</dt><dd><p>用小规模实验预测更大训练，从而减少昂贵试验。</p></dd><dt>Data</dt><dd><p>处理来源、抽取、筛选、去重、混合和合成数据，决定模型接触什么训练信号。</p></dd><dt>Alignment</dt><dd><p>用监督微调、偏好优化和强化学习把基础能力转成可用行为。</p></dd></dl>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-015-本章小结"><h4>本章小结</h4>
+<p>课程并不是把 tokenization、架构、训练和系统作为互不相关的专题，而是把它们放在资源约束下统一理解。模型表达能力、训练稳定性和运行效率之间的平衡，是后续每一讲都会出现的主线。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-01-heading-016-tokenization-把字符串变成可计算的序列"><h3>Tokenization：把字符串变成可计算的序列</h3>
+<section class="course-source-section level-4" id="lecture-01-heading-017-tokenizer-的接口与目标"><h4>Tokenizer 的接口与目标</h4>
+<p>模型接收的是整数序列，而用户提供的是字符串。因此 tokenizer 至少需要实现两个方向：</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{encode}:\text{string}\rightarrow\text{list[int]}, \qquad \operatorname{decode}:\text{list[int]}\rightarrow\text{string}."><mrow><mo>encode</mo><mi>:</mi><mtext>string</mtext><mo>→</mo><mtext>list[int]</mtext><mo>,</mo><mspace width="2em" /><mo>decode</mo><mi>:</mi><mtext>list[int]</mtext><mo>→</mo><mtext>string</mtext><mo>.</mo></mrow></math></figure>
+<p>编码应当尽量保留原文信息，使得</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{decode}(\operatorname{encode}(x))=x."><mrow><mo>decode</mo><mo stretchy="false">(</mo><mo>encode</mo><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><mi>x</mi><mo>.</mo></mrow></math></figure>
+<p>同时，token 序列不能过长，因为上下文长度有限，attention 的计算和显存开销还会随序列长度增长。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-01/figures/official_tokenized-example-fe744c7f.webp" alt="字符串、token 序列与语言模型输入之间的转换" width="1800" height="739" loading="lazy"><figcaption>字符串、token 序列与语言模型输入之间的转换</figcaption></figure>
+<p>一个有用的 tokenizer 需要在至少三个目标之间折中：词表大小、压缩率和对新文本的覆盖能力。词表越大，常见片段可以用更少 token 表示；但 embedding、输出层和存储成本会上升。词表越小，表示更通用，却会让序列变长。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-018-字符级-tokenizer"><h4>字符级 tokenizer</h4>
+<p>字符级方法把每个 Unicode 字符作为一个 token。它的优点是概念简单，几乎不会遇到未知字符；缺点是 Unicode 字符数量很大，而且不同语言、组合字符和特殊符号使得词表设计复杂。更重要的是，单个字符携带的信息量通常较低，英文单词和代码标识符会被拆成很长的序列。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-019-字节级-tokenizer"><h4>字节级 tokenizer</h4>
+<p>UTF-8 把任意 Unicode 字符串编码为字节序列，每个字节取值范围为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="0"><mrow><mn>0</mn></mrow></math></span> 到 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="255"><mrow><mn>255</mn></mrow></math></span>，所以基础词表只需要 256 个值。字节级表示具有完全覆盖能力，不需要为每种语言单独列出字符集合，也不需要把未见过的字符映射为 UNK。</p>
+<p>缺点是压缩率很差：多数文本中的一个字符可能对应多个字节，一个单词会变成许多 token。序列变长后，固定上下文能够覆盖的原文变少，attention 计算也会增加。因此字节级表示适合做可靠的基础表示，却通常需要进一步合并常见字节片段。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-020-词级-tokenizer"><h4>词级 tokenizer</h4>
+<p>词级方法先按空格和标点切分字符串，再为每个 chunk 分配整数。它的 token 具有直观语义，序列通常较短；但词表会随着语料增长，罕见词难以学习，新词需要 UNK，且不同语言的空格和词边界规则差异很大。</p>
+<p>“词”也不是稳定的基本单位。代码中的标识符、URL、数字、拼写变化和形态变化都可能产生大量低频词。子词方法的目标，是在字节级覆盖能力和词级压缩率之间取得更平衡的结果。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-021-本章小结"><h4>本章小结</h4>
+<p>字符级表示覆盖广但序列长，词级表示紧凑但词表和未知词问题严重，字节级表示可靠但压缩率低。现代 tokenizer 通常从小的基础单位开始，再根据语料统计合并常见片段。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-01-heading-022-bpe-用语料统计学习子词词表"><h3>BPE：用语料统计学习子词词表</h3>
+<section class="course-source-section level-4" id="lecture-01-heading-023-算法来源与基本直觉"><h4>算法来源与基本直觉</h4>
+<p>Byte Pair Encoding 最初是用于数据压缩的算法，后来被用于神经机器翻译，再进入 GPT-2 等语言模型 tokenizer<sup class="course-footnote-ref" id="course-footnote-ref-01-7"><a href="#courses?lecture=lecture-01&section=course-footnote-01-7">7</a></sup>。它的基本想法是：从字节词表开始，反复寻找语料中最常见的相邻 token 对，并把这一对合并为一个新 token。</p>
+<ol class="course-enumerate"><li><p>初始时，每个 UTF-8 字节都是一个 token，词表包含 256 个基础 token；</p></li><li><p>统计训练语料中相邻 token pair 的出现次数；</p></li><li><p>选择频率最高的 pair，分配一个新的 token ID；</p></li><li><p>将语料中该 pair 的出现全部替换为新 token；</p></li><li><p>重复若干次，直到达到目标词表大小或合并次数。</p></li></ol>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-024-训练示例"><h4>训练示例</h4>
+<p>以字符串 “the cat in the hat” 为例，先将其转成字节 ID 序列。第一次统计可能发现某个相邻 pair 出现次数最高，例如组成 “th” 的两个 token；合并后，后续统计会在包含新 token 的序列上继续进行。每次合并都需要同时记录两件事：合并规则，以及新 token 对应的字节串。</p>
+<figure class="course-code-block"><div class="course-code-caption">BPE 训练的核心循环</div><pre><code class="language-python">indices = list(string.encode("utf-8"))
+merges = {}
+vocab = {x: bytes([x]) for x in range(256)}
+
+for i in range(num_merges):
+    counts = count_adjacent_pairs(indices)
+    pair = max(counts, key=counts.get)
+    new_index = 256 + i
+    merges[pair] = new_index
+    vocab[new_index] = vocab[pair[0]] + vocab[pair[1]]
+    indices = merge(indices, pair, new_index)</code></pre></figure>
+<p>这里的 <code>count_adjacent_pairs</code> 遍历相邻元素并累加计数；<code>merge</code> 则按选中的 pair 从左到右重写序列。训练阶段的规则顺序很重要，因为后面应用 tokenizer 时必须按照同样的 merge rank 处理新文本。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-025-编码-解码与压缩率"><h4>编码、解码与压缩率</h4>
+<p>训练完成后，编码器把新字符串转成基础字节 token，再按学习到的合并规则逐步替换 pair。解码器查找每个 token 对应的字节串并拼接，最后按 UTF-8 解码回字符串。只要词表和 merge 规则保存完整，编码再解码就应恢复原文。</p>
+<p>可以用</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\text{compression ratio} =\frac{\text{原始字符串长度}}{\text{token 数}}"><mrow><mtext>compression ratio</mtext><mo>=</mo><mfrac><mrow><mtext>原始字符串长度</mtext></mrow><mrow><mtext>token 数</mtext></mrow></mfrac></mrow></math></figure>
+<p>衡量 tokenizer 的紧凑程度。字节 tokenizer 的比值通常接近 1；加入高频合并后，常见词、词缀和代码片段可以用更少 token 表示。压缩率提高会减少上下文中的 token 数，但也会增大词表和 embedding/output 参数的成本。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-026-实际实现中的细节"><h4>实际实现中的细节</h4>
+<p>课程的作业实现还需要处理几个工程问题：</p>
+<ul class="course-itemize"><li><p>不能每次编码都扫描全部 merge 规则，应只更新受最近一次合并影响的相邻 pair；</p></li><li><p>特殊 token，例如 <code>&lt;|endoftext|&gt;</code>，需要在普通文本合并前被识别和保留；</p></li><li><p>GPT-2 风格的 pre-tokenization 正则表达式会先按空格、标点和字母数字模式划分片段，再在片段内部运行 BPE；</p></li><li><p>训练和编码都需要高效，算法正确但速度过慢仍然无法用于大语料。</p></li></ul>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-027-tokenization-的局限与未来方向"><h4>Tokenization 的局限与未来方向</h4>
+<p>tokenizer 把连续字节空间离散成固定词表，这个接口很方便，但也带来几类限制：不同语言的压缩率不均衡，数字和代码的分割方式可能不符合语义，词表边界还会影响模型看到的上下文。课程最后提出，未来的表示方法至少需要同时满足：比现有 tokenizer 更高效，能够让计算资源集中到更有信息的片段，并能处理不同长度和结构的输入。</p>
+<p>Percy Liang 特别强调，固定长度 chunk 不一定适合所有字节序列；如果所有字节都被同样处理，模型可能在简单内容上浪费计算，在复杂内容上又缺少足够上下文。任何替代方案都需要把表示、压缩和自适应计算放在一起评价。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-01-heading-028-本章小结"><h4>本章小结</h4>
+<p>BPE 通过统计相邻 token pair 学习子词词表，在字节级覆盖能力与词级压缩率之间取得折中。完整实现不仅包括频率统计和合并，还包括 merge 顺序、特殊 token、pre-tokenization、编码解码一致性与运行效率。tokenizer 是模型训练链路的第一道接口，它会影响序列长度、词表参数、上下文利用率和后续系统成本。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-01-heading-029-总结与延伸"><h3>总结与延伸</h3>
+<p>第1讲建立了整门课的坐标系：语言模型的基本目标并不神秘，但从数据到部署的每一层都包含会改变结果的工程和研究决策。CS336 通过实现 tokenizer、Transformer、训练系统、数据管线和 alignment 组件，逐步把这些决策拆开。</p>
+<p>本讲的技术核心是 tokenization。字符级方法保证覆盖，词级方法提供紧凑表示，字节级方法提供统一基础，BPE 则从训练语料中学习哪些片段值得合并。判断 tokenizer 好坏时，不能只看词表大小或压缩率，还要看语言覆盖、上下文利用率、模型质量和运行成本。</p>
+<p>下一讲从 resource accounting 开始，把参数、梯度、激活、FLOPs、显存和带宽放入统一的估算框架。这样可以把本讲提出的“表达能力、稳定性和效率之间的平衡”转成可计算的工程问题。</p>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-01-1">OpenAI, 2023. <em>GPT-4 Technical Report</em>. <a href="https://arxiv.org/abs/2303.08774" target="_blank" rel="noopener noreferrer">arXiv:2303.08774</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-01-2">Shazeer, 2020. <em>GLU Variants Improve Transformer</em>. <a href="https://arxiv.org/abs/2002.05202" target="_blank" rel="noopener noreferrer">arXiv:2002.05202</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-2" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-01-3">Bengio et al., 2003. <em>A Neural Probabilistic Language Model</em>. JMLR 2003. <a href="https://www.jmlr.org/papers/v3/bengio03a.html" target="_blank" rel="noopener noreferrer">JMLR 论文页</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-3" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-01-4">Hochreiter and Schmidhuber, 1997. <em>Long Short-Term Memory</em>. Neural Computation. <a href="https://doi.org/10.1162/neco.1997.9.8.1735" target="_blank" rel="noopener noreferrer">DOI</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-4" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-01-5">Vaswani et al., 2017. <em>Attention Is All You Need</em>. NeurIPS 2017. <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener noreferrer">arXiv:1706.03762</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-5" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-01-6">Kaplan et al., 2020. <em>Scaling Laws for Neural Language Models</em>. arXiv:2001.08361. <a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener noreferrer">arXiv:2001.08361</a>; Hoffmann et al., 2022. <em>Training Compute-Optimal Large Language Models</em>. NeurIPS 2022. <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener noreferrer">arXiv:2203.15556</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-6" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-01-7">Sennrich, Haddow, and Birch, 2016. <em>Neural Machine Translation of Rare Words with Subword Units</em>. ACL 2016. <a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener noreferrer">arXiv:1508.07909</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-01&section=course-footnote-ref-01-7" aria-label="返回正文">↩</a></li>
+</ol></section>

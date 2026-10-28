@@ -1,0 +1,223 @@
+<section class="course-source-section level-3" id="lecture-15-heading-001-从基础模型到可控助手"><h3>从基础模型到可控助手</h3>
+<p>本讲由 Tatsu Hashimoto 讨论预训练之后的模型构建。预训练已经提供广泛的语言、知识和代码能力，mid-training 与 post-training 则进一步塑造模型怎样回答、怎样使用工具，以及怎样依据偏好和任务反馈调整行为。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p02-d0541535.webp" alt="从预训练基础模型到遵循指令的助手模型" width="1800" height="1014" loading="lazy"><figcaption>从预训练基础模型到遵循指令的助手模型</figcaption></figure>
+<p>Instruction following 是一种很强的控制接口：同一模型可以根据自然语言要求改变任务、格式、语气和输出形式。课程中的可视化例子展示了模型依据指令生成特定代码和结果的能力。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p03-eeabc6cc.webp" alt="自然语言指令对模型输出任务、格式与程序行为的控制" width="1800" height="1014" loading="lazy"><figcaption>自然语言指令对模型输出任务、格式与程序行为的控制</figcaption></figure>
+<p>典型管线先进行 supervised fine-tuning（SFT），再收集回答比较，训练 reward 或直接优化 preference objective<sup class="course-footnote-ref" id="course-footnote-ref-15-1"><a href="#courses?lecture=lecture-15&section=course-footnote-15-1">1</a></sup>。数据收集和学习目标分别决定模型模仿什么、优化什么。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p06-0d384c56.webp" alt="示范数据、监督微调、成对偏好和强化学习组成的后训练管线" width="1800" height="1014" loading="lazy"><figcaption>示范数据、监督微调、成对偏好和强化学习组成的后训练管线</figcaption></figure>
+<p>SFT 的组成可分为数据与训练方法。随着模型应用变化，数据从短任务问答扩展到长回答、真实对话、工具调用和 agent 轨迹，方法则要处理这些不同监督形式。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p07-21d17d1d.webp" alt="SFT 中的数据来源、任务类型和训练方法" width="1800" height="1014" loading="lazy"><figcaption>SFT 中的数据来源、任务类型和训练方法</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-15-heading-002-本章小结"><h4>本章小结</h4>
+<p>后训练把广泛基础能力组织成可使用的行为。理解它需要同时分析示范、偏好、优化算法和训练阶段之间的联系。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-003-sft-任务示范-表达与知识"><h3>SFT：任务示范、表达与知识</h3>
+<section class="course-source-section level-4" id="lecture-15-heading-004-训练目标与回答-token"><h4>训练目标与回答 token</h4>
+<p>给定 prompt <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="x"><mrow><mi>x</mi></mrow></math></span> 与示范回答 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="y"><mrow><mi>y</mi></mrow></math></span>，SFT 的基本目标是</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\mathcal L_{\rm SFT}=-\mathbb E_{(x,y)\sim D} \sum_{t=1}^{|y|}\log\pi_\theta(y_t\mid x,y_{&lt;t})."><mrow><msub><mi mathvariant="script">L</mi><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">F</mi><mi mathvariant="normal">T</mi></mrow></msub><mo>=</mo><mo>−</mo><msub><mi mathvariant="double-struck">E</mi><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mi>~</mi><mi>D</mi></mrow></msub><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mrow><mo stretchy="false">|</mo><mi>y</mi><mo stretchy="false">|</mo></mrow></munderover><mi>log</mi><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo>∣</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<ul class="course-itemize"><li><p><span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 提供希望模型模仿的任务与回答。</p></li><li><p>在对话训练中，需要根据角色和模板确定参与 loss 的 assistant token；prompt 和 padding 的 mask 决定哪些位置提供监督。</p></li></ul>
+<p>同样的目标可以训练分类标签、文本解释、代码和结构化工具调用。训练效果取决于数据里的实际输入输出。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p08-d0c0adbd.webp" alt="SFT 数据分析关注样本内容、构造方法与训练效果" width="1800" height="1014" loading="lazy"><figcaption>SFT 数据分析关注样本内容、构造方法与训练效果</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-005-开放-instruction-数据的演进"><h4>开放 instruction 数据的演进</h4>
+<p>早期 instruction tuning 将许多已有 NLP 任务改写为自然语言指令，例如 FLAN<sup class="course-footnote-ref" id="course-footnote-ref-15-2"><a href="#courses?lecture=lecture-15&section=course-footnote-15-2">2</a></sup>。随后 Self-Instruct、Alpaca、ShareGPT/Vicuna、OpenAssistant、WizardLM、Tulu 等数据，逐渐增加对话性、回答细节和多种任务。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p09-730d9a0a.webp" alt="从任务集合到合成对话、人工助手与 agent 数据的演进" width="1800" height="1014" loading="lazy"><figcaption>从任务集合到合成对话、人工助手与 agent 数据的演进</figcaption></figure>
+<p>FLAN 示例常保留原任务的评价格式：输入可能很长，答案却只是摘要、标签或一个短字段。这类数据让模型学会按任务要求输出。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p10-ed5174b8.webp" alt="FLAN 中的分类、摘要和结构化任务示范" width="1800" height="1014" loading="lazy"><figcaption>FLAN 中的分类、摘要和结构化任务示范</figcaption></figure>
+<p>Alpaca 使用强模型生成 instruction–response 对，出现更多开放问答和解释性回答<sup class="course-footnote-ref" id="course-footnote-ref-15-3"><a href="#courses?lecture=lecture-15&section=course-footnote-15-3">3</a></sup>。示例中的简短建议、概念解释和代码回答，展示了助手行为的初步形态。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p11-1461ba33.webp" alt="Alpaca 的建议、定义与代码回答示例" width="1800" height="1014" loading="lazy"><figcaption>Alpaca 的建议、定义与代码回答示例</figcaption></figure>
+<p>OpenAssistant 进一步加入人类编写的较长回答、复杂知识与引用。这样的数据也改变模型的表达细节和知识使用方式。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p12-ce6ad9c9.webp" alt="OpenAssistant 中较长、带引用或代码的人工回答" width="1800" height="1014" loading="lazy"><figcaption>OpenAssistant 中较长、带引用或代码的人工回答</figcaption></figure>
+<p>Nemotron 的工具数据则把函数名称、参数、调用过程和返回信息放进监督序列。模型需要同时学习内容和交互协议。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p13-19075bf8.webp" alt="面向工具调用的 instruction 数据与结构化参数示范" width="1800" height="1014" loading="lazy"><figcaption>面向工具调用的 instruction 数据与结构化参数示范</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-006-数据变化的几个维度"><h4>数据变化的几个维度</h4>
+<p>这些集合在 chattiness、回答细节、工具使用、长度和引用习惯上存在差异。对同一基础模型换一套 instruction 数据，就会改变输出行为。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p14-f0baeeb1.webp" alt="不同 instruction 数据在对话性、细节与工具使用上的变化" width="1800" height="1014" loading="lazy"><figcaption>不同 instruction 数据在对话性、细节与工具使用上的变化</figcaption></figure>
+<p>还要观察较不直观的因素：数据规模、任务覆盖、安全样本和事实密度。样本检查让这些因素从数据集名称变成具体训练信号。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p15-c250dd96.webp" alt="Instruction 数据中的长度、格式、知识、规模与安全因素" width="1800" height="1014" loading="lazy"><figcaption>Instruction 数据中的长度、格式、知识、规模与安全因素</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-007-长度与样式怎样影响评价"><h4>长度与样式怎样影响评价</h4>
+<p>数据中的 prompt/completion 长度分布会影响模型生成习惯。较长回答、分点说明、详细解释和礼貌措辞，都可以通过 SFT 被抽取出来。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p16-e08aaee4.webp" alt="不同 instruction 数据的样本规模及输入输出长度分布" width="1800" height="1014" loading="lazy"><figcaption>不同 instruction 数据的样本规模及输入输出长度分布</figcaption></figure>
+<p>人类偏好和模型 judge 对样式十分敏感。图中比较了不同评估者对列表和长输出的偏好，说明回答形式本身会进入 win rate。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p17-8eb59b30.webp" alt="人类与模型评估者对列表和回答长度的不同偏好" width="1800" height="1014" loading="lazy"><figcaption>人类与模型评估者对列表和回答长度的不同偏好</figcaption></figure>
+<p>而知识、代码、常识等传统 benchmark 的变化可能更小。这意味着一种 SFT 配方在偏好上更受欢迎，可能主要来自行为与表达适配；不同评价维度需要分别观察。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p18-e807f60b.webp" alt="多种 instruction 数据在传统下游任务上的表现比较" width="1800" height="1014" loading="lazy"><figcaption>多种 instruction 数据在传统下游任务上的表现比较</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-008-引用与事实学习"><h4>引用与事实学习</h4>
+<p>OpenAssistant 的例子同时包含经济学解释和具体文献引用。这样的样本教给模型概念、表达方式与“何时给引用”等行为；准确引用还依赖模型对文献与内容的知识。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p19-5488b7b2.webp" alt="复杂知识与文献引用同时出现在 SFT 回答中的例子" width="1800" height="1014" loading="lazy"><figcaption>复杂知识与文献引用同时出现在 SFT 回答中的例子</figcaption></figure>
+<p>关于新知识的研究显示，fine-tuning 中熟悉知识与新事实的学习速度和泛化行为可以不同<sup class="course-footnote-ref" id="course-footnote-ref-15-4"><a href="#courses?lecture=lecture-15&section=course-footnote-15-4">4</a></sup>。训练分布中的事实、基础模型已有知识和输出信心共同影响幻觉。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p20-b7a4f8dc.webp" alt="知识抽取、新事实学习与幻觉之间的实验联系" width="1800" height="1014" loading="lazy"><figcaption>知识抽取、新事实学习与幻觉之间的实验联系</figcaption></figure>
+<p>LIMA 等工作也展示，强基础模型可以用少量高质量示范学到有用的助手行为<sup class="course-footnote-ref" id="course-footnote-ref-15-5"><a href="#courses?lecture=lecture-15&section=course-footnote-15-5">5</a></sup>。这为 SFT 的实践提供了一个有用视角：数据既要激活已有能力，也要覆盖目标交互的具体形式。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-009-本章小结"><h4>本章小结</h4>
+<p>SFT 的效果来自任务分布、回答内容与表达方式的共同作用。小规模优质数据可以明显改变行为，长尾任务、知识覆盖和工具协议仍需要有针对性的示范。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-010-安全行为的数据构造"><h3>安全行为的数据构造</h3>
+<section class="course-source-section level-4" id="lecture-15-heading-011-从风险场景到监督回答"><h4>从风险场景到监督回答</h4>
+<p>面向用户的模型需要处理虚假信息、欺诈、滥用等风险。训练数据可以教模型识别情境、拒绝特定请求，或在适当范围内提供有用回答。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p22-2c834123.webp" alt="模型部署中的虚假信息、欺诈和其他安全场景" width="1800" height="1014" loading="lazy"><figcaption>模型部署中的虚假信息、欺诈和其他安全场景</figcaption></figure>
+<p>Llama 2 报告提供了一些安全 SFT 的具体信息，例如用几千量级的相关示例调整行为<sup class="course-footnote-ref" id="course-footnote-ref-15-6"><a href="#courses?lecture=lecture-15&section=course-footnote-15-6">6</a></sup>。安全行为与一般任务帮助性需要共同评价。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p23-f1f02db1.webp" alt="Llama 2 的安全微调描述与帮助性、安全性的关系" width="1800" height="1014" loading="lazy"><figcaption>Llama 2 的安全微调描述与帮助性、安全性的关系</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-012-tulu-与真实场景收集"><h4>Tulu 与真实场景收集</h4>
+<p>Tulu 3 展示了较清楚的数据组成和后训练路线<sup class="course-footnote-ref" id="course-footnote-ref-15-7"><a href="#courses?lecture=lecture-15&section=course-footnote-15-7">7</a></sup>。不同安全数据集提供不同的场景和回答风格。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p24-07c5c993.webp" alt="Tulu 3 对安全数据组成和训练流程的公开描述" width="1800" height="1014" loading="lazy"><figcaption>Tulu 3 对安全数据组成和训练流程的公开描述</figcaption></figure>
+<p>真实交互也是场景来源。WildChat 通过提供对话服务收集实际 prompts，其中包含普通使用、敏感问题和尝试改变模型行为的输入。这些数据可以帮助构造更接近使用环境的训练集合。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p25-dc61265b.webp" alt="从真实用户对话中提取安全场景的数据流程" width="1800" height="1014" loading="lazy"><figcaption>从真实用户对话中提取安全场景的数据流程</figcaption></figure>
+<p>课件中的小数据实验显示，约几百个有针对性的示例就能改变一些安全指标。它说明数据方向和行为信号可以非常集中；效果的覆盖范围则由所包含的任务与测试决定。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p26-4da59005.webp" alt="少量安全示例对多个安全评估任务的影响" width="1800" height="1014" loading="lazy"><figcaption>少量安全示例对多个安全评估任务的影响</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-013-本章小结"><h4>本章小结</h4>
+<p>安全训练把风险场景转成可学习的回答行为。场景覆盖、示范方式与正常请求上的帮助性，需要在同一评估框架下观察。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-014-mid-training-将任务数据纳入后期预训练"><h3>Mid-training：将任务数据纳入后期预训练</h3>
+<p>SFT 的基本训练循环是取出标注序列，计算回答 token 的交叉熵，反向传播并执行 optimizer step。角色、prompt 与 padding 的 mask 把任务示范转换为具体监督位置。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p28-032c18ef.webp" alt="SFT 中的 forward、loss、backward 与梯度更新循环" width="1800" height="1014" loading="lazy"><figcaption>SFT 中的 forward、loss、backward 与梯度更新循环</figcaption></figure>
+<p>SFT 使用熟悉的梯度下降，较大规模的数据和计算则催生了分阶段混合。一个常见路线是先在通用数据上训练，再逐渐加入 instruction、代码或数学数据，最后做较短的专门 SFT。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p29-bc32cd44.webp" alt="在预训练后期混入 instruction 数据，再进行专门微调的流程" width="1800" height="1014" loading="lazy"><figcaption>在预训练后期混入 instruction 数据，再进行专门微调的流程</figcaption></figure>
+<p>两阶段训练可以保持部分通用数据，同时提高任务相关来源的权重。图中稳定阶段和后期阶段的数据比例变化，体现了从广泛覆盖到目标适配的过渡。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p30-5ee1821c.webp" alt="两阶段训练中通用与任务相关数据权重的变化" width="1800" height="1014" loading="lazy"><figcaption>两阶段训练中通用与任务相关数据权重的变化</figcaption></figure>
+<p>这也影响“base model”的含义：经过后期指令混合的模型，已经有一定对话或任务行为。比较模型时，了解训练阶段和数据经历可以更好解释后续 SFT 的增益。</p>
+<p>课堂问答还比较了 SFT 与 RL 的监督来源。SFT 在示范轨迹的各个回答位置提供密集监督，RL 则从当前 policy 采样并通过反馈强化有效行为。面对当前策略很少产生的目标行为，示范可提供起点；面对能通过探索找到的更好解法，反馈优化则提供持续改进的途径。数据混合通常先在小规模运行中试验，再据目标任务结果调整。</p>
+<section class="course-source-section level-4" id="lecture-15-heading-015-本章小结"><h4>本章小结</h4>
+<p>Mid-training 将预训练能力与具体应用连接起来，通过数据混合和日程安排，为后续指令或偏好优化准备合适起点。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-016-偏好数据-谁在定义更好的回答"><h3>偏好数据：谁在定义更好的回答</h3>
+<section class="course-source-section level-4" id="lecture-15-heading-017-从模仿分布到优化结果"><h4>从模仿分布到优化结果</h4>
+<p>SFT 用示范拟合一种回答分布；RLHF 进一步依据可测反馈提高回答质量。人类擅长生成的内容和人类最终偏好的内容可以不同，比较判断提供了额外信号。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p32-f4bf00f0.webp" alt="模仿参考回答分布与最大化 reward 的两类学习目标" width="1800" height="1014" loading="lazy"><figcaption>模仿参考回答分布与最大化 reward 的两类学习目标</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p33-dcb9151c.webp" alt="生成能力与偏好判断之间的差异及相应实验" width="1800" height="1014" loading="lazy"><figcaption>生成能力与偏好判断之间的差异及相应实验</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-018-成对比较与标注指南"><h4>成对比较与标注指南</h4>
+<p>典型数据包含问题 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="x"><mrow><mi>x</mi></mrow></math></span>、两个回答，以及标注者的偏好。比较比绝对打分更容易提供方向性信号，还可同时收集质量维度、原因和置信信息。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p36-9f1c12b5.webp" alt="同一 prompt 下的成对回答与偏好标注界面" width="1800" height="1014" loading="lazy"><figcaption>同一 prompt 下的成对回答与偏好标注界面</figcaption></figure>
+<p>InstructGPT 的指南把帮助性、真实性和无害性等目标转成具体判断说明。标注者需要依据内容与任务要求评价，而其理解也会受专业知识和时间影响。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p37-c109baba.webp" alt="InstructGPT 的标注指南与回答质量标准" width="1800" height="1014" loading="lazy"><figcaption>InstructGPT 的标注指南与回答质量标准</figcaption></figure>
+<p>Bard 的例子展示另一套指南如何组织回答评价。不同说明对错误、表达方式和可接受回答的定义，会改变最终偏好数据。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p38-79601694.webp" alt="另一套偏好标注流程中的质量维度与操作说明" width="1800" height="1014" loading="lazy"><figcaption>另一套偏好标注流程中的质量维度与操作说明</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-019-标注者-预算与伦理"><h4>标注者、预算与伦理</h4>
+<p>标注者分布反映平台的招募与任务结构。课件中的统计来自一个具体平台，呈现地区、任务类型与从业背景等维度。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p39-6d7c0279.webp" alt="偏好标注平台中工作者的地区与任务分布" width="1800" height="1014" loading="lazy"><figcaption>偏好标注平台中工作者的地区与任务分布</figcaption></figure>
+<p>专家任务增加后，标注费用与专业门槛也发生变化。医生、律师或专业工程任务，需要能够核查细节的人参与。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p40-08cbfff6.webp" alt="专家标注需求增长与不同任务的报酬差异" width="1800" height="1014" loading="lazy"><figcaption>专家标注需求增长与不同任务的报酬差异</figcaption></figure>
+<p>众包实践包括身份与能力核验、时间预算、质量抽查，以及如何处理标注者使用 AI 的情况。一次长回答中可能有多条事实，细致检查所需时间远超点击一次偏好。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p41-6b339559.webp" alt="偏好数据采集中的能力核查、正确性检查与工具使用问题" width="1800" height="1014" loading="lazy"><figcaption>偏好数据采集中的能力核查、正确性检查与工具使用问题</figcaption></figure>
+<p>采集还涉及工作条件、报酬和敏感内容暴露。将这些条件纳入流程，可以更完整地理解一份偏好数据是如何形成的。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p42-9bc5ee1c.webp" alt="大规模数据标注中的工作条件与伦理议题" width="1800" height="1014" loading="lazy"><figcaption>大规模数据标注中的工作条件与伦理议题</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-020-人口统计-风格与隐含偏好"><h4>人口统计、风格与隐含偏好</h4>
+<p>标注者群体的背景会影响模型表达的观点<sup class="course-footnote-ref" id="course-footnote-ref-15-8"><a href="#courses?lecture=lecture-15&section=course-footnote-15-8">8</a></sup>。图中将模型回答与不同人群的调查意见比较，研究偏好训练所形成的行为分布。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p43-a89426b3.webp" alt="标注者群体与模型意见分布之间的关系" width="1800" height="1014" loading="lazy"><figcaption>标注者群体与模型意见分布之间的关系</figcaption></figure>
+<p>课堂还介绍了 subliminal learning：具有某种行为偏好的教师生成数据后，学生可能通过这些数据继承相关特征，即使表面任务并未直接表达这种偏好<sup class="course-footnote-ref" id="course-footnote-ref-15-9"><a href="#courses?lecture=lecture-15&section=course-footnote-15-9">9</a></sup>。猫头鹰偏好的例子说明，训练数据影响的行为范围可以超出显式任务标签。</p>
+<p>不同专业程度的标注者，也可能对事实、细节、简洁性和表达方式赋予不同权重。Inter-annotator agreement 衡量一致性，专家验证和可核查任务结果则提供其他质量信号。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p44-8e262fb1.webp" alt="不同标注者对回答样式和内容维度的偏好差异" width="1800" height="1014" loading="lazy"><figcaption>不同标注者对回答样式和内容维度的偏好差异</figcaption></figure>
+<p>课堂问答讨论了如何选择“好标注者”。可以结合明确任务上的正确率、专家评审、标注一致性及目标用户分布，分别衡量能力和代表性。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-021-ai-feedback-与-self-training"><h4>AI feedback 与 self-training</h4>
+<p>强模型可以快速产生大量偏好判断。课件中的实验显示，模型反馈与人类在系统级排名上有较强相关性，单样本的一致性则提供另一层评价。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p45-47298f57.webp" alt="模型反馈与人类偏好之间的系统级相关性及样本级一致性" width="1800" height="1014" loading="lazy"><figcaption>模型反馈与人类偏好之间的系统级相关性及样本级一致性</figcaption></figure>
+<p>UltraFeedback、Zephyr、Tulu 等工作把生成式模型反馈纳入开放后训练。AI feedback 使采集更便宜、规模更大，也会将 judge 的偏好带入优化目标。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p46-e59e5ac2.webp" alt="开放模型中 AI feedback 的数据生成与训练应用" width="1800" height="1014" loading="lazy"><figcaption>开放模型中 AI feedback 的数据生成与训练应用</figcaption></figure>
+<p>Constitutional AI 让模型依据一组原则批评和修改回答，并利用相关反馈训练<sup class="course-footnote-ref" id="course-footnote-ref-15-10"><a href="#courses?lecture=lecture-15&section=course-footnote-15-10">10</a></sup>。原则、生成模型、修改过程与比较规则共同定义了监督。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p47-7c89a59e.webp" alt="Constitutional AI 的自我批评、修改与反馈训练流程" width="1800" height="1014" loading="lazy"><figcaption>Constitutional AI 的自我批评、修改与反馈训练流程</figcaption></figure>
+<p>长度是一个反复出现的偏好因素：更详细的回答可能被人类和模型 judge 评价得更高，训练也会相应改变输出长度。图中的长度、reward 和偏好关系，连接了本讲与上一讲的 length-controlled evaluation。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p48-4c200a1e.webp" alt="RLHF 数据与训练中的长度效应" width="1800" height="1014" loading="lazy"><figcaption>RLHF 数据与训练中的长度效应</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-022-本章小结"><h4>本章小结</h4>
+<p>偏好数据由任务、回答、标注指南、标注者和评价工具共同构成。理解这些成分，才能解释 reward 最终代表了怎样的质量标准。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-023-ppo-与-dpo-怎样使用偏好信号"><h3>PPO 与 DPO：怎样使用偏好信号</h3>
+<section class="course-source-section level-4" id="lecture-15-heading-024-reward-model-与-kl-正则目标"><h4>Reward model 与 KL 正则目标</h4>
+<p>对同一问题的优选回答 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="y_w"><mrow><msub><mi>y</mi><mi>w</mi></msub></mrow></math></span> 与较差回答 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="y_l"><mrow><msub><mi>y</mi><mi>l</mi></msub></mrow></math></span>，Bradley–Terry 模型使用</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="P(y_w\succ y_l\mid x)=\sigma(r_\phi(x,y_w)-r_\phi(x,y_l))."><mrow><mi>P</mi><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>≻</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>r</mi><mi>ϕ</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mi>w</mi></msub><mo stretchy="false">)</mo><mo>−</mo><msub><mi>r</mi><mi>ϕ</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><msub><mi>y</mi><mi>l</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="r_\phi"><mrow><msub><mi>r</mi><mi>ϕ</mi></msub></mrow></math></span> 是 reward model，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\sigma"><mrow><mi>σ</mi></mrow></math></span> 是 sigmoid。对比较数据最大化该概率，可以学到回答的相对奖励。</p>
+<p>训练 policy 的典型目标为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\max_\pi\ \mathbb E_{x,y\sim\pi}[r_\phi(x,y)] -\beta\mathbb E_xD_{\rm KL}(\pi(\cdot\mid x)\Vert\pi_{\rm ref}(\cdot\mid x))."><mrow><msub><mo>max</mo><mi>π</mi></msub><mtext> </mtext><msub><mi mathvariant="double-struck">E</mi><mrow><mi>x</mi><mo>,</mo><mi>y</mi><mi>~</mi><mi>π</mi></mrow></msub><mo stretchy="false">[</mo><msub><mi>r</mi><mi>ϕ</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>−</mo><mi>β</mi><msub><mi mathvariant="double-struck">E</mi><mi>x</mi></msub><msub><mi>D</mi><mrow><mi mathvariant="normal">K</mi><mi mathvariant="normal">L</mi></mrow></msub><mo stretchy="false">(</mo><mi>π</mi><mo stretchy="false">(</mo><mo>·</mo><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mi>‖</mi><msub><mi>π</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi></mrow></msub><mo stretchy="false">(</mo><mo>·</mo><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<ul class="course-itemize"><li><p><span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\pi_{\rm ref}"><mrow><msub><mi>π</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi></mrow></msub></mrow></math></span> 通常提供 SFT 模型的分布锚点。</p></li><li><p><span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\beta"><mrow><mi>β</mi></mrow></math></span> 控制 reward 改善与偏离 reference 的取舍。</p></li></ul>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p50-257a2fce.webp" alt="将生成模型视为可优化 policy，并依据反馈调整回答概率" width="1800" height="1014" loading="lazy"><figcaption>将生成模型视为可优化 policy，并依据反馈调整回答概率</figcaption></figure>
+<p>InstructGPT 将这一目标交给 PPO，并可加入预训练目标以保持一般能力。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p51-012cb783.webp" alt="InstructGPT 中的 reward、KL 与预训练混合目标" width="1800" height="1014" loading="lazy"><figcaption>InstructGPT 中的 reward、KL 与预训练混合目标</figcaption></figure>
+<p>更早的摘要反馈研究提供了 reward model 和 preference learning 的具体背景<sup class="course-footnote-ref" id="course-footnote-ref-15-11"><a href="#courses?lecture=lecture-15&section=course-footnote-15-11">11</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p52-23f90b20.webp" alt="摘要任务中的反馈数据、reward model 与策略训练" width="1800" height="1014" loading="lazy"><figcaption>摘要任务中的反馈数据、reward model 与策略训练</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-025-ppo-的基本路径"><h4>PPO 的基本路径</h4>
+<p>策略梯度用采样 reward 加权 log-probability 梯度。TRPO 限制相邻策略的变化，PPO 则用 ratio clipping 构造更容易实现的 surrogate objective。这样可以在同一批 rollout 上进行若干更新。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p53-a0662c27.webp" alt="从策略梯度、TRPO 到 PPO clipping 的算法路线" width="1800" height="1014" loading="lazy"><figcaption>从策略梯度、TRPO 到 PPO clipping 的算法路线</figcaption></figure>
+<p>PPO 的实现需要 rollout、value/advantage、KL 与更新循环。开放研究由此探索了多种简化路线：给回答标注好坏后训练条件生成；只用优选回答做 SFT；对好坏回答施加正负更新；或者先用 reward model 选择生成候选，再训练选择后的回答。这些设计逐渐引出了直接把 policy 与偏好模型联系起来的 DPO。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-026-dpo-的三步推导"><h4>DPO 的三步推导</h4>
+<p>DPO 用 policy 的 log-probability ratio 表示隐含 reward，再直接训练成对偏好<sup class="course-footnote-ref" id="course-footnote-ref-15-12"><a href="#courses?lecture=lecture-15&section=course-footnote-15-12">12</a></sup>。基本训练使用固定比较数据和 reference policy，省去了显式 reward model 与单独的 rollout 外循环。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p55-c02e15ce.webp" alt="PPO 式 RLHF 与 DPO 的训练组成比较" width="1800" height="1014" loading="lazy"><figcaption>PPO 式 RLHF 与 DPO 的训练组成比较</figcaption></figure>
+<p>第一步，在允许任意分布的策略空间求解 KL 正则目标，最优策略满足</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\pi^*(y\mid x)=\frac{\pi_{\rm ref}(y\mid x)\exp(r(x,y)/\beta)}{Z(x)}."><mrow><msup><mi>π</mi><mo>*</mo></msup><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>π</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi></mrow></msub><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mi>exp</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>/</mo><mi>β</mi><mo stretchy="false">)</mo></mrow><mrow><mi>Z</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>.</mo></mrow></math></figure>
+<p>这里 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="Z(x)"><mrow><mi>Z</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></math></span> 是对所有回答归一化的常数。第二步，将关系反解为 reward：</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="r(x,y)=\beta\log\frac{\pi^*(y\mid x)}{\pi_{\rm ref}(y\mid x)}+\beta\log Z(x)."><mrow><mi>r</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mi>β</mi><mi>log</mi><mfrac><mrow><msup><mi>π</mi><mo>*</mo></msup><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi></mrow></msub><mo stretchy="false">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>+</mo><mi>β</mi><mi>log</mi><mi>Z</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p56-a9763f96.webp" alt="KL 正则目标的最优分布及隐含 reward 的反解" width="1800" height="1014" loading="lazy"><figcaption>KL 正则目标的最优分布及隐含 reward 的反解</figcaption></figure>
+<p>第三步，把 reward 代入成对比较。相同问题下 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\log Z(x)"><mrow><mi>log</mi><mi>Z</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></math></span> 在差值中消去，用参数化 policy <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\pi_\theta"><mrow><msub><mi>π</mi><mi>θ</mi></msub></mrow></math></span> 表示隐含 reward，就得到</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\mathcal L_{\rm DPO}=-\mathbb E\log\sigma\!\left[ \beta\left(\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\rm ref}(y_w\mid x)} -\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\rm ref}(y_l\mid x)}\right)\right]."><mrow><msub><mi mathvariant="script">L</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi><mi mathvariant="normal">O</mi></mrow></msub><mo>=</mo><mo>−</mo><mi mathvariant="double-struck">E</mi><mi>log</mi><mi>σ</mi><mspace width="negativethinmathspace" /><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mi>β</mi><mrow><mo stretchy="true" fence="true" form="prefix">(</mo><mi>log</mi><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>−</mo><mi>log</mi><mfrac><mrow><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mrow><msub><mi>π</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">)</mo></mrow><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>.</mo></mrow></math></figure>
+<ul class="course-itemize"><li><p><span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="x,y_w,y_l"><mrow><mi>x</mi><mo>,</mo><msub><mi>y</mi><mi>w</mi></msub><mo>,</mo><msub><mi>y</mi><mi>l</mi></msub></mrow></math></span> 来自成对偏好数据，reference 分布固定。</p></li><li><p>可直接对 policy 的回答 log-probability 求梯度，训练形式接近监督学习。</p></li></ul>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p57-27125fd5.webp" alt="归一化常数消去后得到的 DPO 成对偏好目标" width="1800" height="1014" loading="lazy"><figcaption>归一化常数消去后得到的 DPO 成对偏好目标</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-027-梯度怎样区分回答"><h4>梯度怎样区分回答</h4>
+<p>令括号内的未乘 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\beta"><mrow><mi>β</mi></mrow></math></span> 项为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\Delta_\theta"><mrow><msub><mi>Δ</mi><mi>θ</mi></msub></mrow></math></span>，梯度为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\nabla_\theta\mathcal L =-\beta\sigma(-\beta\Delta_\theta) [\nabla_\theta\log\pi_\theta(y_w\mid x) -\nabla_\theta\log\pi_\theta(y_l\mid x)]."><mrow><msub><mo>∇</mo><mi>θ</mi></msub><mi mathvariant="script">L</mi><mo>=</mo><mo>−</mo><mi>β</mi><mi>σ</mi><mo stretchy="false">(</mo><mo>−</mo><mi>β</mi><msub><mi>Δ</mi><mi>θ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">[</mo><msub><mo>∇</mo><mi>θ</mi></msub><mi>log</mi><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>w</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mo>∇</mo><mi>θ</mi></msub><mi>log</mi><msub><mi>π</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>y</mi><mi>l</mi></msub><mo>∣</mo><mi>x</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>.</mo></mrow></math></figure>
+<p>更新提高优选回答的相对概率，降低较差回答的相对概率；隐含 preference 预测越偏离标签，权重通常越大。Reference 则使这种比较具有相对锚点。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p58-02d6baa7.webp" alt="DPO 的正向、负向梯度及隐含预测误差权重" width="1800" height="1014" loading="lazy"><figcaption>DPO 的正向、负向梯度及隐含预测误差权重</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-028-迭代训练与变体"><h4>迭代训练与变体</h4>
+<p>Llama 等开放模型可以在 SFT、DPO 和新数据生成之间迭代。固定数据上的一次 DPO 更新与重新收集回答后的下一轮，承担不同角色。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p59-d2e7eeb9.webp" alt="开放模型中 SFT、DPO 与 expert iteration 的组合" width="1800" height="1014" loading="lazy"><figcaption>开放模型中 SFT、DPO 与 expert iteration 的组合</figcaption></figure>
+<p>SimPO、length-normalized DPO 等变体改变 reference 使用、序列归一化或间隔项。回答长度进入 log-probability 的方式也会改变正负样本的权重。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p60-3c4b6448.webp" alt="DPO 的 reference、长度归一化与相关变体" width="1800" height="1014" loading="lazy"><figcaption>DPO 的 reference、长度归一化与相关变体</figcaption></figure>
+<p>算法比较还需要共同的数据、模型、调参预算和评价规则。课程中的 PPO 与 DPO 实验展示，不同设置下各方法都有优势区域。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p61-f0b73598.webp" alt="不同实验与模型设置下 PPO、DPO 及其他方法的比较" width="1800" height="1014" loading="lazy"><figcaption>不同实验与模型设置下 PPO、DPO 及其他方法的比较</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-029-本章小结"><h4>本章小结</h4>
+<p>PPO 显式使用 reward 和 rollout 优化 policy；DPO 将 KL 正则目标与比较模型联系起来，形成直接的偏好损失。两者都把反馈变成回答概率的变化。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-030-优化之后的变化-过度优化与多样性"><h3>优化之后的变化：过度优化与多样性</h3>
+<section class="course-source-section level-4" id="lecture-15-heading-031-reward-overoptimization"><h4>Reward overoptimization</h4>
+<p>Reward model 从有限比较中学习，持续优化会逐渐暴露其误差。图中代理 reward 继续增加时，人类或其他独立质量指标可能先升后降。KL 约束、数据更新和独立评估共同影响这一过程。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p63-e56f97dc.webp" alt="多种偏好优化方法中的 reward overoptimization 曲线" width="1800" height="1014" loading="lazy"><figcaption>多种偏好优化方法中的 reward overoptimization 曲线</figcaption></figure>
+<p>课程还比较了人类反馈、有噪声模型反馈与更确定的目标。反馈准确性改变了优化曲线，也为下一讲转向可验证任务提供了动机。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-032-entropy-校准与模式集中"><h4>Entropy、校准与模式集中</h4>
+<p>偏好优化会重新分配回答概率，可能集中到更少的表达或策略。输出长度、熵、多样性与置信校准因此都需要重新测量。对于依赖多次采样寻找解法的任务，探索分布尤其重要。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-15/figures/official_p64-441b95c6.webp" alt="RLHF 后的模式集中、多样性和校准变化" width="1800" height="1014" loading="lazy"><figcaption>RLHF 后的模式集中、多样性和校准变化</figcaption></figure>
+<p>这一部分也是 SFT 与 RL 的连接：SFT 由示范分布塑造输出，RL 再强化部分行为；最终分布取决于数据覆盖、偏好强度与训练预算。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-15-heading-033-本章小结"><h4>本章小结</h4>
+<p>提高代理 reward 会同时改变内容、样式和概率分布。独立质量指标与生成多样性提供了评价这些变化的不同视角。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-15-heading-034-总结与课堂问答"><h3>总结与课堂问答</h3>
+<p>本讲完成了从示范到反馈优化的链路：任务数据定义助手行为，mid-training 为专门任务准备起点，偏好数据刻画“更好”的回答，PPO/DPO 将这种信号转成 policy 更新。</p>
+<p>课堂讨论还强调了专家标注与一般标注的区别、不同领域 judge 的可用性，以及训练数据如何在模型之间传递行为。模型生成数据的风格和隐含偏好，同样会进入后续学习。</p>
+<p>实践上，先查看样本与指南，再检查训练目标和概率权重，最后观察帮助性、正确性、安全性、长度与多样性的共同变化。下一讲的 RLVR 继续研究怎样利用更明确的成功反馈，让优化计算更有效地用于解题。</p>
+<section class="course-source-section level-4" id="lecture-15-heading-035-本章小结"><h4>本章小结</h4>
+<p>后训练将已有能力转化为具体行为，再通过反馈改善目标结果。数据与优化之间的联系，是理解模型最终表现的关键。</p>
+</section>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-15-1">Ouyang et al., 2022. <em>Training Language Models to Follow Instructions with Human Feedback</em>. <a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener noreferrer">arXiv:2203.02155</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-2">Wei et al., 2021. <em>Finetuned Language Models Are Zero-Shot Learners</em>. <a href="https://arxiv.org/abs/2109.01652" target="_blank" rel="noopener noreferrer">arXiv:2109.01652</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-2" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-3">Taori et al., 2023. <em>Stanford Alpaca: An Instruction-Following LLaMA Model</em>. <a href="https://crfm.stanford.edu/2023/03/13/alpaca.html" target="_blank" rel="noopener noreferrer">Stanford CRFM 项目说明</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-3" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-4">Gekhman et al., 2024. <em>Does Fine-Tuning LLMs on New Knowledge Encourage Hallucinations?</em> <a href="https://arxiv.org/abs/2405.05904" target="_blank" rel="noopener noreferrer">arXiv:2405.05904</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-4" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-5">Zhou et al., 2023. <em>LIMA: Less Is More for Alignment</em>. <a href="https://arxiv.org/abs/2305.11206" target="_blank" rel="noopener noreferrer">arXiv:2305.11206</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-5" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-6">Touvron et al., 2023. <em>Llama 2: Open Foundation and Fine-Tuned Chat Models</em>. <a href="https://arxiv.org/abs/2307.09288" target="_blank" rel="noopener noreferrer">arXiv:2307.09288</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-6" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-7">Lambert et al., 2024. <em>Tulu 3: Pushing Frontiers in Open Language Model Post-Training</em>. <a href="https://arxiv.org/abs/2411.15124" target="_blank" rel="noopener noreferrer">arXiv:2411.15124</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-7" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-8">Santurkar et al., 2023. <em>Whose Opinions Do Language Models Reflect?</em> <a href="https://arxiv.org/abs/2303.17548" target="_blank" rel="noopener noreferrer">arXiv:2303.17548</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-8" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-9">Cloud et al., 2025. <em>Subliminal Learning: Language Models Transmit Behavioral Traits via Hidden Signals in Data</em>. <a href="https://arxiv.org/abs/2507.14805" target="_blank" rel="noopener noreferrer">arXiv:2507.14805</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-9" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-10">Bai et al., 2022. <em>Constitutional AI: Harmlessness from AI Feedback</em>. <a href="https://arxiv.org/abs/2212.08073" target="_blank" rel="noopener noreferrer">arXiv:2212.08073</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-10" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-11">Stiennon et al., 2020. <em>Learning to Summarize from Human Feedback</em>. <a href="https://arxiv.org/abs/2009.01325" target="_blank" rel="noopener noreferrer">arXiv:2009.01325</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-11" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-15-12">Rafailov et al., 2023. <em>Direct Preference Optimization: Your Language Model Is Secretly a Reward Model</em>. <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener noreferrer">arXiv:2305.18290</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-15&section=course-footnote-ref-15-12" aria-label="返回正文">↩</a></li>
+</ol></section>

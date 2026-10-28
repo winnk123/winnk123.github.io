@@ -1,0 +1,50 @@
+<section class="course-source-section level-3" id="lecture-08-heading-001-为什么需要多维并行"><h3>为什么需要多维并行</h3>
+<p>单 GPU 的 kernel 优化解决的是卡内计算和内存问题。本讲进入数据中心尺度：模型参数、梯度、optimizer state 和激活可能超过单卡容量，也需要更多 GPU 提供计算吞吐。多 GPU 系统的统一目标是让内存和计算近似随设备数扩展，同时把通信成本控制在可接受范围。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p02-d0541535.webp" alt="大模型训练的系统复杂性与多种并行范式" width="1800" height="1014" loading="lazy"><figcaption>大模型训练的系统复杂性与多种并行范式</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p06-0d384c56.webp" alt="多 GPU、多机器并行把内存和计算分布到不同设备" width="1800" height="1014" loading="lazy"><figcaption>多 GPU、多机器并行把内存和计算分布到不同设备</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p13-19075bf8.webp" alt="多机器训练希望获得线性内存和计算扩展" width="1800" height="1014" loading="lazy"><figcaption>多机器训练希望获得线性内存和计算扩展</figcaption></figure>
+</section>
+<section class="course-source-section level-3" id="lecture-08-heading-002-通信原语与硬件拓扑"><h3>通信原语与硬件拓扑</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p07-21d17d1d.webp" alt="reduce、all-reduce、all-gather、broadcast 和 reduce-scatter" width="1800" height="1014" loading="lazy"><figcaption>reduce、all-reduce、all-gather、broadcast 和 reduce-scatter</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p08-d0c0adbd.webp" alt="all-reduce 等价于 reduce-scatter 加 all-gather" width="1800" height="1014" loading="lazy"><figcaption>all-reduce 等价于 reduce-scatter 加 all-gather</figcaption></figure>
+<p>all-reduce 可以拆成 reduce-scatter 与 all-gather，这个等价是 ZeRO/FSDP 进行状态分片的基础。不同 collective 对带宽、延迟、拓扑和同步方式的要求不同。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p09-730d9a0a.webp" alt="TPU mesh 与 GPU 网络拓扑的差异" width="1800" height="1014" loading="lazy"><figcaption>TPU mesh 与 GPU 网络拓扑的差异</figcaption></figure>
+<p>节点内 NVLink/NVSwitch 适合频繁 tensor parallel 通信；跨节点 InfiniBand 或 Ethernet 更慢，通常需要 pipeline、data 或更粗粒度的通信。系统设计必须把并行方式放到真实拓扑上。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-08-heading-003-数据并行与-zero-fsdp"><h3>数据并行与 ZeRO/FSDP</h3>
+<p>朴素数据并行复制完整模型，每个 rank 处理不同 batch，反向后 all-reduce 梯度。它实现简单，但每张 GPU 都保存参数、梯度和 optimizer state。以混合精度 Adam 为例，每个参数可能需要约 16 bytes 的综合状态，模型规模很快超过显存。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p17-8eb59b30.webp" alt="朴素数据并行的每参数内存账" width="1800" height="1014" loading="lazy"><figcaption>朴素数据并行的每参数内存账</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p18-e807f60b.webp" alt="ZeRO 逐步切分 optimizer state、梯度和参数" width="1800" height="1014" loading="lazy"><figcaption>ZeRO 逐步切分 optimizer state、梯度和参数</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p19-5488b7b2.webp" alt="ZeRO Stage 1 的 optimizer state sharding" width="1800" height="1014" loading="lazy"><figcaption>ZeRO Stage 1 的 optimizer state sharding</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p22-2c834123.webp" alt="ZeRO Stage 2 进一步切分梯度" width="1800" height="1014" loading="lazy"><figcaption>ZeRO Stage 2 进一步切分梯度</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p24-07c5c993.webp" alt="ZeRO Stage 3/FSDP 把参数也分片" width="1800" height="1014" loading="lazy"><figcaption>ZeRO Stage 3/FSDP 把参数也分片</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p25-dc61265b.webp" alt="FSDP 按层 all-gather 参数并 reduce-scatter 梯度" width="1800" height="1014" loading="lazy"><figcaption>FSDP 按层 all-gather 参数并 reduce-scatter 梯度</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p26-4da59005.webp" alt="FSDP 中计算与通信重叠的实际执行方式" width="1800" height="1014" loading="lazy"><figcaption>FSDP 中计算与通信重叠的实际执行方式</figcaption></figure>
+<p>ZeRO Stage 1 切 optimizer state，Stage 2 再切梯度，Stage 3/FSDP 连参数也切分。参数在当前层计算前 all-gather，计算完成后释放；反向产生的梯度及时 reduce-scatter 回各自分片。Stage 3 的通信更多，但显存收益最大；预取下一层参数可以把通信隐藏在当前层计算中。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-08-heading-004-张量-流水线与激活并行"><h3>张量、流水线与激活并行</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p31-07cdbad1.webp" alt="模型并行原语与 tensor/pipeline parallel 的切分方向" width="1800" height="1014" loading="lazy"><figcaption>模型并行原语与 tensor/pipeline parallel 的切分方向</figcaption></figure>
+<p>Tensor parallel 在单层矩阵内部切分权重，适合高速互连节点内使用。Pipeline parallel 按层切分网络，把激活传给下一个 stage；多个 micro-batch 可以填充流水线，但会产生 bubble。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p38-79601694.webp" alt="张量并行中按矩阵行列切分线性层" width="1800" height="1014" loading="lazy"><figcaption>张量并行中按矩阵行列切分线性层</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p44-8e262fb1.webp" alt="参数内存之外的动态激活内存" width="1800" height="1014" loading="lazy"><figcaption>参数内存之外的动态激活内存</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p48-4c200a1e.webp" alt="sequence parallel 沿序列维度切分逐点操作" width="1800" height="1014" loading="lazy"><figcaption>sequence parallel 沿序列维度切分逐点操作</figcaption></figure>
+<p>Tensor parallel 能切分矩阵计算，却不自动解决 LayerNorm、Dropout 和 attention 激活的内存。Sequence parallel 把这些沿 sequence axis 的逐点操作也分片，并在必要位置使用 all-gather/reduce-scatter，使激活内存更接近随并行度线性缩放。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-08-heading-005-专家并行-上下文并行与组合策略"><h3>专家并行、上下文并行与组合策略</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p50-257a2fce.webp" alt="expert parallel 按专家切分并路由 token activation" width="1800" height="1014" loading="lazy"><figcaption>expert parallel 按专家切分并路由 token activation</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p54-cfcb86b4.webp" alt="context parallel 或 ring attention 分布长序列激活" width="1800" height="1014" loading="lazy"><figcaption>context parallel 或 ring attention 分布长序列激活</figcaption></figure>
+<p>Expert parallel 不切单个矩阵，而是把不同专家放到不同 GPU，token 根据 router 结果通过 all-to-all 发送。它对 MoE 的专家层很自然，但需要优化 dispatch、通信和负载均衡。Context parallel 则把长序列的 activation 分布到多个 GPU，适合长上下文训练。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-08-heading-006-3d-4d-并行的工程处方"><h3>3D/4D 并行的工程处方</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p57-27125fd5.webp" alt="3D/4D 并行把数据、张量、流水线和专家维度组合起来" width="1800" height="1014" loading="lazy"><figcaption>3D/4D 并行把数据、张量、流水线和专家维度组合起来</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p58-02d6baa7.webp" alt="Megatron 等系统对并行维度的组合建议" width="1800" height="1014" loading="lazy"><figcaption>Megatron 等系统对并行维度的组合建议</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p60-3c4b6448.webp" alt="细致组合并行在增加GPU时保持较好的利用率" width="1800" height="1014" loading="lazy"><figcaption>细致组合并行在增加GPU时保持较好的利用率</figcaption></figure>
+<p>一个常见经验是：先用 tensor/expert parallel 把模型切到单节点可管理的规模，再用 pipeline 或 FSDP 解决模型容量，最后把剩余 GPU 扩展交给 data parallel。TP 常限制在高速 NVLink 域；跨节点更适合 pipeline、data 或较粗粒度 EP。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-08-heading-007-真实模型配置与总结"><h3>真实模型配置与总结</h3>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p64-441b95c6.webp" alt="真实大模型中 ZeRO、TP、sequence、pipeline 与 EP 的组合" width="1800" height="1014" loading="lazy"><figcaption>真实大模型中 ZeRO、TP、sequence、pipeline 与 EP 的组合</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p72-d891835f.webp" alt="不同模型的并行配置比较" width="1800" height="1014" loading="lazy"><figcaption>不同模型的并行配置比较</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-08/figures/official_p73-857ddb1f.webp" alt="多维并行课程总结" width="1800" height="1014" loading="lazy"><figcaption>多维并行课程总结</figcaption></figure>
+<p>没有一种并行策略适用于所有模型。参数内存、激活内存、KV cache、通信带宽、全局 batch、故障率和实现复杂度共同决定方案。超大训练通常组合多种维度，并通过 overlap、重计算和分片让通信不暴露在关键路径上。</p>
+<p>下一讲进入 scaling laws，会把这些系统预算与模型规模、数据量和训练损失联系起来。</p>
+</section>

@@ -1,0 +1,217 @@
+<section class="course-source-section level-3" id="lecture-13-heading-001-数据决定模型能够学到什么"><h3>数据决定模型能够学到什么</h3>
+<p>在确定架构、训练方法和评估目标后，课程进入训练数据。Percy Liang 将本讲组织为三个层次：原始在线来源、可下载的抓取或快照，以及经过筛选和混合的训练数据集。下一讲继续展开具体处理算法。</p>
+<p>模型报告往往详细描述架构和训练系统，却只概述数据。数据既是能力的重要来源，也涉及竞争、获取和使用条件。Llama 3 的说明提供了一个例子：规模和大类可知，完整可复现的文件集合则较难获得。 Percy Liang 将这种披露差异与两件事联系起来：数据配方本身具有竞争价值；公开具体来源还可能引出版权争议。架构相近的模型，仍可能因为数据来源和处理方法不同而表现出明显差距。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_llama3-data-664063ca.webp" alt="Llama 3 报告对训练数据规模、类别与处理的描述" width="1608" height="257" loading="lazy"><figcaption>Llama 3 报告对训练数据规模、类别与处理的描述</figcaption></figure>
+<p>基础模型减少了预训练阶段的逐例人工标注，但采集、清理和筛选仍然需要大量工作。不同语言、领域与长尾任务各有问题，可以由不同团队持续改进；数据工作因此会随着模型覆盖范围扩大而增长。</p>
+<section class="course-source-section level-4" id="lecture-13-heading-002-预训练-mid-training-与-post-training"><h4>预训练、mid-training 与 post-training</h4>
+<p>预训练接触大量通用文本和代码；mid-training 增加高质量网页、数学、代码与任务相关内容；SFT 和 RL 进一步用任务示范及反馈塑造行为。后面的阶段通常使用更少、目标更明确的数据，处理与验证也更精细。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_olmo2-pretraining-ba9d6afc.webp" alt="OLMo 2 从大规模预训练到后续训练阶段的数据安排" width="1478" height="711" loading="lazy"><figcaption>OLMo 2 从大规模预训练到后续训练阶段的数据安排</figcaption></figure>
+<p>OLMo 2 的 Dolmino 混合展示了后期训练如何提高数学、代码和教育类内容的权重。模型的“base”能力也会受这些阶段影响，比较基础模型时需要了解其数据经历。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_olmo2-dolmino-f214f2ec.webp" alt="Dolmino 的任务相关、高质量数据混合" width="1219" height="1214" loading="lazy"><figcaption>Dolmino 的任务相关、高质量数据混合</figcaption></figure>
+<p>Tulu 的后训练数据则接近实际用户任务，包含 instruction、reasoning 和偏好信号。不同阶段通过不同形式的数据推进同一模型的能力<sup class="course-footnote-ref" id="course-footnote-ref-13-1"><a href="#courses?lecture=lecture-13&section=course-footnote-13-1">1</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_tulu-305d0d2a.webp" alt="Tulu 后训练中的指令、偏好与强化学习数据组成" width="1613" height="1294" loading="lazy"><figcaption>Tulu 后训练中的指令、偏好与强化学习数据组成</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-003-本章小结"><h4>本章小结</h4>
+<p>数据工作的单位不只是 token 数，还包括来源、格式、选择规则、采样权重与训练阶段。明确这些层次，才能理解一个模型配方。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-004-从在线服务到可训练的快照"><h3>从在线服务到可训练的快照</h3>
+<section class="course-source-section level-4" id="lecture-13-heading-005-采集对象与技术限制"><h4>采集对象与技术限制</h4>
+<p>Web 首先是一组持续运行的服务。网页会改变，应用可能需要点击和提交表单，部分内容需要登录或付费。构建静态训练语料时，需要通过 crawler 或 dump 把这些状态转成可存储文件。</p>
+<p>Crawler 从 seed URLs 开始，下载页面并发现新链接。其可访问范围受到动态界面、身份认证、速率限制、机器人检测、网络和服务政策影响。因此，实际训练集覆盖的是可获得且经过选择的 Web 子集。</p>
+<p>动态应用的内容常依赖按钮、表单或登录状态，地址栏里的 URL 未必随内容变化。Discord、实验管理界面与需要登录的社区就是这类对象；付费新闻又增加了访问门槛。普通 HTTP 抓取只能取得相应请求和身份下返回的内容，因此“某项内容存在于互联网上”与“它已进入一个训练快照”之间还有具体的采集过程。</p>
+<p>Robots.txt 描述网站对抓取机器人的访问政策；Terms of Service 规定服务使用条件；版权和许可规定作品的相关使用权利。这些信息对应不同层面，需要随来源和采集时间记录。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-006-抓取许可与服务成本"><h4>抓取许可与服务成本</h4>
+<p><em>Consent in Crisis</em> 研究了 C4、RefinedWeb、Dolma 等语料来源中访问限制的变化<sup class="course-footnote-ref" id="course-footnote-ref-13-2"><a href="#courses?lecture=lecture-13&section=course-footnote-13-2">2</a></sup>。图中不同时间的条款与 robots 变化，说明相同网站在不同抓取时期可能有不同使用条件。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_decline-consent-b1a55758.webp" alt="常见训练语料来源的抓取和使用限制随时间变化" width="1345" height="1041" loading="lazy"><figcaption>常见训练语料来源的抓取和使用限制随时间变化</figcaption></figure>
+<p>频繁抓取还会增加服务器负载和运营成本。课程中的案例把数据获取与网站服务质量联系起来：采集策略需要控制请求节奏、重访频率和重复下载。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_anthropic-crawling-39cd5123.webp" alt="高频抓取对网站服务造成影响的案例" width="760" height="554" loading="lazy"><figcaption>高频抓取对网站服务造成影响的案例</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-007-shadow-libraries"><h4>Shadow libraries</h4>
+<p>课程还介绍 LibGen、Z-Library、Anna's Archive、Sci-Hub 等 shadow libraries。它们聚集了大量图书或论文，也伴随版权、下架和诉讼争议。它们在数据研究中的出现，使“文件是否能下载”与“作品如何获得和使用”成为同时需要追踪的来源问题。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-008-本章小结"><h4>本章小结</h4>
+<p>采集阶段把在线内容变成有版本、有时间范围的快照。访问政策、服务成本与作品来源共同影响数据的可获得性。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-009-作品-许可与训练用途"><h3>作品、许可与训练用途</h3>
+<section class="course-source-section level-4" id="lecture-13-heading-010-版权保护的对象"><h4>版权保护的对象</h4>
+<p>本讲在美国版权框架下讨论作品来源。版权保护固定载体上的原创表达，算法思想与某份具体代码表达、事实与特定文字组织分别涉及不同分析。具有创意选择和编排的集合，也需要考虑其集合层面的表达<sup class="course-footnote-ref" id="course-footnote-ref-13-3"><a href="#courses?lecture=lecture-13&section=course-footnote-13-3">3</a></sup>。</p>
+<p>版权通常在符合条件的作品创作时产生；登记涉及权利记录及诉讼程序。保护期限依作品类型、创作与发表时间、作者身份等因素变化。公共领域作品与受许可作品构成两类重要的数据来源。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-011-授权如何影响数据配方"><h4>授权如何影响数据配方</h4>
+<p>许可证规定允许的使用方式与义务。Creative Commons 是一组许可工具，可包含署名、相同方式共享、非商业等不同条件；代码中常见 MIT、Apache 等许可。数据集的整理者需要保存具体许可和来源，而不仅记录“开放”这一标签。</p>
+<p>模型开发者也会与内容提供者签订数据协议。课程举出新闻、图片、社区问答等领域的授权合作，说明高质量或难以抓取的数据可以通过协议获取。 具体例子包括 Google 与 Reddit、OpenAI 与 Shutterstock，以及 OpenAI 与 Stack Overflow 的合作。这类协议把数据提供方、允许用途与获取方式纳入约定，也使某些持续更新的来源成为模型开发流程的一部分。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-012-fair-use-的四个分析因素"><h4>Fair use 的四个分析因素</h4>
+<p>美国版权法 Section 107 列出 fair use 的四个因素<sup class="course-footnote-ref" id="course-footnote-ref-13-4"><a href="#courses?lecture=lecture-13&section=course-footnote-13-4">4</a></sup>：</p>
+<ol class="course-enumerate"><li><p><strong>使用的目的与性质。</strong>课堂比较教育用途与商业用途，以及为新目的进行转换与重新分发原作的区别。</p></li><li><p><strong>原作品的性质。</strong>事实性资料与高度创造性的表达在分析中具有不同特点，例如历史事实介绍与原创诗歌。</p></li><li><p><strong>使用部分的数量和实质性。</strong>使用片段、使用全文，以及是否使用了作品的核心部分，都会进入分析。</p></li><li><p><strong>对作品现实或潜在市场的影响。</strong>替代原作、降低原作销售或授权价值，与为不同功能提供支持，具有不同的经济后果。</p></li></ol>
+<p>四个因素需要结合具体事实衡量。课程用观看电影后写影评、独立实现算法、Google Books 的全文索引与片段检索来讨论作品使用和用途转换。其中，算法重实现首先涉及思想与具体代码表达的区分；Google Books 则涉及复制图书后提供检索功能的用途。</p>
+<p>版权问题还涉及故事情节、人物等表达；逐字复现只是其中一种情形。分析生成模型时，既要观察输出与作品的关系，也要考虑复制和使用作品的过程。Percy Liang 认为，训练具有从具体文本中学习一般知识和能力的用途转换特点，同时模型也可能影响作者和艺术家的市场；这两方面都进入了课堂讨论。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-013-三个诉讼案例中的具体争点"><h4>三个诉讼案例中的具体争点</h4>
+<p>以下按 2026 年春本讲介绍的背景整理各案。</p>
+<p><strong>The New York Times v. OpenAI。</strong>2023 年提起的诉讼涉及新闻文章被用于训练，以及模型在特定提示下再现文章内容的指控。这个案例把训练数据来源与生成输出联系起来：来源中的作品是什么、模型能产生怎样的输出，都是需要观察的具体事实。</p>
+<p><strong>Bartz v. Anthropic。</strong>作者指控 Anthropic 从盗版来源获取大量图书并用于训练。2025 年 6 月的裁定分别分析了模型训练、购买纸书后的扫描转换，以及从盗版来源建立图书库：案中相应训练用途获得 fair use 认定，购买纸书后的特定数字化做法也获得支持；盗版来源的复制则没有因此自动获得正当性<sup class="course-footnote-ref" id="course-footnote-ref-13-5"><a href="#courses?lecture=lecture-13&section=course-footnote-13-5">5</a></sup>。课堂随后介绍了 15 亿美元的和解安排。这里的重要区别是，后续购买某本书，并不会消除先前取得盗版文件这一行为本身的问题。</p>
+<p><strong>Kadrey v. Meta。</strong>作者针对其图书被用于 LLaMA 训练提起诉讼。课程介绍的 2025 年简易判决在该案的证据和主张下支持了 Meta 的训练用途，关于图书下载和分发方式的争议则另有事实与程序问题。这个案例与 Anthropic 案一起说明，训练用途的分析与文件取得方式的分析各有对象；具体案件中的判断需要联系对应作品、使用过程和市场证据。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-014-服务条款与来源层次"><h4>服务条款与来源层次</h4>
+<p>网站的 ToS、底层作品许可、数据集合许可和训练用途是不同层次的条件。一个数据集可以为整理后的集合提供许可，同时其中每份文档仍保有自己的来源与权利信息。这样的层次关系会在 Common Pile 等工作中再次出现。</p>
+<p>课堂还讨论了许可随时间改变的情况。Percy Liang 将已经取得的特定版本与后续新增内容区分开来。数据记录因此需要同时保存文件版本、获取时间和当时的许可信息，以便追踪具体作品的使用条件。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-015-本章小结"><h4>本章小结</h4>
+<p>理解数据配方需要同时理解内容与来源条件：作品来自哪里、怎样取得、有什么许可，以及训练过程中如何处理和使用。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-016-common-crawl-规模化网页存档"><h3>Common Crawl：规模化网页存档</h3>
+<section class="course-source-section level-4" id="lecture-13-heading-017-抓取策略"><h4>抓取策略</h4>
+<p>Common Crawl 提供周期性 Web 抓取存档，是多个开放训练语料的基础<sup class="course-footnote-ref" id="course-footnote-ref-13-6"><a href="#courses?lecture=lecture-13&section=course-footnote-13-6">6</a></sup>。其数据分批发布，不同月份之间有覆盖和重复，也有内容更新。</p>
+<p>一个 crawler 管理 URL 队列：取出链接、下载响应、解析新链接，再将新地址加入队列。Selection policy 决定抓哪些页面，politeness policy 控制网站负载，revisit policy 决定多久重访。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_330px-webcrawlerarchitecture_svg-e53249ae.webp" alt="Crawler 的 URL 队列、下载、解析和新链接发现结构" width="330" height="253" loading="lazy"><figcaption>Crawler 的 URL 队列、下载、解析和新链接发现结构</figcaption></figure>
+<p>同一内容可能出现在多个 URL，动态参数也可能产生大量近重复页面。因此，抓取策略与后续去重相互影响。研究时还应记录 crawl 批次、时间范围和筛选后的保留量。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-018-warc-wet-与文本抽取"><h4>WARC、WET 与文本抽取</h4>
+<p>WARC 保存 HTTP 响应等原始记录，可以包含 HTML；WET 提供已经转成文本的结果。HTML 到文本要处理菜单、页脚、广告、表格和正文边界，会影响保留内容与顺序。</p>
+<p>DCLM 的实验显示，文本抽取工具的选择会改变后续模型表现<sup class="course-footnote-ref" id="course-footnote-ref-13-7"><a href="#courses?lecture=lecture-13&section=course-footnote-13-7">7</a></sup>。保存原始网页使研究者能够重新运行抽取；直接使用 WET 则继承已有转换的结果。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_dclm-wet-21871cd1.webp" alt="HTML 抽取方式对训练数据及模型效果的影响" width="486" height="180" loading="lazy"><figcaption>HTML 抽取方式对训练数据及模型效果的影响</figcaption></figure>
+<p>在图中的受控比较中，resiliparse 和 trafilatura 的 CORE 分数分别为 24.1、24.5，WET 为 20.7；EXTENDED 分数分别为 13.4、12.5 和 12.2。这些数值衡量使用抽取后语料训练的模型表现，因此正文抽取已经是影响模型质量的一项数据决策。WARC 提供重新选择抽取算法的空间，WET 则提供更方便的现成文本。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-019-本章小结"><h4>本章小结</h4>
+<p>Common Crawl 提供大规模存档，真正的训练语料还取决于选用哪些批次、如何抽取正文以及怎样处理重复。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-020-专门来源-百科-代码与论文"><h3>专门来源：百科、代码与论文</h3>
+<section class="course-source-section level-4" id="lecture-13-heading-021-wikipedia"><h4>Wikipedia</h4>
+<p>Wikipedia 提供多语言百科内容，并通过编辑规则、可靠来源要求和社区维护形成较稳定的知识风格。其覆盖面由显著性与百科范围决定，内容来自参与编辑的人群。</p>
+<p>训练数据通常使用周期性 dump。Dump 避免逐页重复抓取，也使版本可记录。编辑时间与快照生成时间还会影响数据质量：临时错误或恶意编辑可能进入某次快照，质量检查需要考虑这一时间过程。</p>
+<p>课堂以数据投毒说明快照时间的作用：攻击者可能在 dump 前插入恶意编辑，即使社区随后回滚，某个已经生成的训练快照仍可能保留它。攻击目标还可以是让模型把特定触发词与某种情感联系起来。百科来源的社区维护与训练快照的生成，是两个相互关联的质量环节。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-022-github-与软件存档"><h4>GitHub 与软件存档</h4>
+<p>代码仓库包含文件、目录结构和版本历史；社区元数据还包含 issue、PR、评论与评审。仓库内容适合通过 Git 或专门存档获取，事件与讨论则使用 API、GitHub Archive 等数据源。</p>
+<p>Fork、复制代码、生成文件和依赖会产生大量重复。代码预处理需要识别许可、文件类型、仓库关系和跨文件上下文。Software Heritage 则聚焦保存软件来源与历史，支持追踪不同托管平台上的仓库内容。</p>
+<p>课堂问答区分了代码文本与协作元数据：一次 PR 不只有 diff，还包括问题说明、评论、上下文与状态。把这些结构转成序列，是后面代码 agent 数据构造的重要步骤。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-023-arxiv"><h4>arXiv</h4>
+<p>arXiv 同时提供 PDF 和部分 LaTeX 源文件。PDF 保留最终版面，转换时需恢复段落、公式与阅读顺序；LaTeX 源码保留结构，但还要处理宏、注释、文件组织和 bibliography。</p>
+<p>论文数据的选择也涉及学科、语言、版本与重复。学术语料提供技术论证和数学表达，和普通网页构成不同的数据分布。 arXiv 的提交审核与期刊或会议同行评审承担不同功能；作者为正文选择的许可，也与标题、摘要等元数据的许可分别记录。批量数据接口使研究者能够直接取得文件，减少逐页抓取所需的工作。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-024-本章小结"><h4>本章小结</h4>
+<p>专门来源在内容风格和结构上各有特点。理解原始对象的结构，有助于设计合适的抽取、过滤和序列化方式。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-025-训练语料的演进与组合"><h3>训练语料的演进与组合</h3>
+<section class="course-source-section level-4" id="lecture-13-heading-026-从-bert-bookscorpus-到-webtext"><h4>从 BERT、BooksCorpus 到 WebText</h4>
+<p>BERT 使用 BooksCorpus 和英文 Wikipedia，结合连续文本学习表示。BooksCorpus 收集图书，提供较长叙事与连续上下文；其获取与再分发也有来源问题需要追踪。</p>
+<p>GPT-2 的 WebText 则以 Reddit 链接及其社区信号选择网页：从达到一定 karma 的帖子提取外链，最终得到约 8M 页面、40GB 文本。这样的选择利用人类分享行为过滤部分 Web 内容，OpenWebText 等工作随后通过 URL 收集、语言识别和近重复去除复现其思路。</p>
+<p>BooksCorpus 的例子则展示连续文档的重要性：书籍提供跨句叙事和长程依赖，与打乱顺序的独立句子不同。内容选择之外，原始授权和发布条件也是语料历史的一部分。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-027-ccnet-从-wikipedia-泛化到更大的-web-语料"><h4>CCNet：从 Wikipedia 泛化到更大的 Web 语料</h4>
+<p>CCNet 的目标是自动构建大规模、高质量预训练语料，尤其希望为低资源语言取得更多文本<sup class="course-footnote-ref" id="course-footnote-ref-13-8"><a href="#courses?lecture=lecture-13&section=course-footnote-13-8">8</a></sup>。这要求处理方法能够跨语言使用，并把较小的目标来源扩展到巨大的 Common Crawl。</p>
+<p>管线首先对段落做轻量归一化，去除重复段落，再用 fastText 进行语言识别，保留目标语言。质量筛选使用在相应语言 Wikipedia 上训练的 KenLM 5-gram 模型：给定前面至多四个词，估计下一个词的概率，并将这些局部概率汇成文档分数。</p>
+<p>困惑度是长度归一后的评分方式。设文档有 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n"><mrow><mi>n</mi></mrow></math></span> 个词，可写成</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{PPL}(x)=\exp\!\left(-\frac{1}{n}\sum_{i=1}^{n} \log p_{\rm Wiki}(x_i\mid x_{i-4:i-1})\right),"><mrow><mo>PPL</mo><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>exp</mi><mspace width="negativethinmathspace" /><mrow><mo stretchy="true" fence="true" form="prefix">(</mo><mo>−</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>n</mi></mrow></mfrac><msubsup><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi></mrow></msubsup><mi>log</mi><msub><mi>p</mi><mrow><mi mathvariant="normal">W</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">k</mi><mi mathvariant="normal">i</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>x</mi><mrow><mi>i</mi><mo>−</mo><mn>4</mn><mi>:</mi><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false">)</mo><mo stretchy="true" fence="true" form="postfix">)</mo></mrow><mo>,</mo></mrow></math></figure>
+<p>其中开头位置使用可用的较短上下文。困惑度较低，表示文本在这个 Wikipedia 语言模型下更典型。目标数据在这里具体定义了筛选偏好：得到的是具有相近语言统计特征的网页子集。</p>
+<p>课堂介绍的 BERT 训练实验中，处理后的 Common Crawl 可以优于只使用 Wikipedia 的训练。关键价值在于，通过一个便宜的评分模型，从更大的候选池里取得足量目标语言文本。CCNet 也同时指论文发布的数据和开源处理工具，因此后续 LLaMA 等工作所说的“使用 CCNet”还包含重用这套处理过程。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-028-c4-用显式规则清理-common-crawl"><h4>C4：用显式规则清理 Common Crawl</h4>
+<p>C4 使用一系列启发式清理规则，从 Common Crawl 形成较干净的大型英文语料<sup class="course-footnote-ref" id="course-footnote-ref-13-9"><a href="#courses?lecture=lecture-13&section=course-footnote-13-9">9</a></sup>。T5 的 text-to-text 建模方法和 C4 的数据构造，是这篇工作的两个重要部分。</p>
+<p>C4 从 2019 年的一次 Common Crawl 快照出发，使用行末标点、最小词数、页面句子数、敏感词、代码符号和英语概率等规则筛选，形成约 806GB、156B token 的语料。每个规则都改变了能留下来的领域和表达方式。分析域名分布，可以研究这些选择如何影响模型。 具体来说，保留的行要以标点结束且至少有五个词，页面至少包含三个句子；含有词表中敏感词、某些模板短语或左花括号的页面会被移除，英语识别阈值设为 0.99。左花括号规则会同时滤掉许多代码，体现了当时语料对自然语言文本的侧重。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_c4-domains-6f20b116.webp" alt="C4 中的域名分布及启发式筛选后的来源组成" width="1024" height="416" loading="lazy"><figcaption>C4 中的域名分布及启发式筛选后的来源组成</figcaption></figure>
+<p>T5 还构造了接近 WebText 选择方式的子集：按 Reddit 外链筛选，合并 12 次 crawl 后取得约 17GB 文本，而 WebText 约为 40GB。相似的 URL 选择策略在不同抓取存档中得到不同规模，说明 Common Crawl 的覆盖会影响可恢复的内容；这个子集也在当时若干 NLP 基准上带来收益。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-029-gpt-3-与多来源采样"><h4>GPT-3 与多来源采样</h4>
+<p>GPT-3 组合处理后的 Common Crawl、WebText2、图书和 Wikipedia，并按来源分配采样概率。语料可用大小与实际训练采样次数因此不同：高权重的小来源可能被多次读取。</p>
+<p>它将 WebText、Wikipedia 和图书等视为质量分类器的正例，从 Common Crawl 采样背景文本，再用分类器筛选网页。网页、WebText 与评价数据之间还需要模糊去重。这个配方把“正例长什么样”“哪些网页留下来”“训练时给各来源多少权重”连在一起，下一讲会进一步展开随机筛选算法。</p>
+<p>这使数据配方同时包含两项：每个来源保留了多少数据，以及训练时以多大权重使用它。下一讲的数据混合进一步研究如何选择这些权重。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-030-the-pile-显式扩大数据多样性"><h4>The Pile：显式扩大数据多样性</h4>
+<p>The Pile 将 22 类专业和通用来源组成约 800GB 的开放语料<sup class="course-footnote-ref" id="course-footnote-ref-13-10"><a href="#courses?lecture=lecture-13&section=course-footnote-13-10">10</a></sup>。论文、代码、问答、图书、邮件等来源提供不同类型的语言任务。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_the-pile-5ad2cb5e.webp" alt="The Pile 的来源与数据组成" width="1022" height="775" loading="lazy"><figcaption>The Pile 的来源与数据组成</figcaption></figure>
+<p>Project Gutenberg 以经过版权核查的图书为主，PG-19 将其用于长上下文建模；Books3 来自另一类图书收集路径，在本讲资料中涉及下架与争议。Stack Exchange 提供问题、回答、投票和标签，既能作预训练文本，也能接近 instruction 数据。</p>
+<p>这些来源各自带来具体的训练信号。图书提供连续叙事与跨段落关系；Stack Exchange 自带用户提问和回答，可以让模型在预训练阶段接触接近真实问答的格式，投票、标签等元数据又提供筛选依据。The Pile 中的 Enron 邮件来自特定公司的历史记录，虽然提供了少见的邮件文本，其组织和事件背景也决定了这类样本的分布。</p>
+<p>这些例子说明，组合数据集时要同时考虑内容价值、结构、重复和来源条件。来源名只提供入口，具体文件与处理版本决定真正的数据。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-031-massivetext-llama-与复现语料"><h4>MassiveText、LLaMA 与复现语料</h4>
+<p>Gopher 的 MassiveText 组合网页、C4、图书、新闻、代码和 Wikipedia，并使用语言、重复与质量规则清理。课件介绍约 10.5TB 的可用文本，而 Gopher 实际训练读取约 300B token。分别记录语料总量和消耗量，有助于理解采样权重与后续训练的数据余量。</p>
+<p>其中 MassiveWeb 采用显式规则控制质量，例如要求大部分词至少含有一个字母，并结合语言识别和去重。规则让整理者可以直接检查删除原因；基于分类器的方法则把目标样本中的偏好推广到新文档。这两条路线会在后续配方中反复出现。</p>
+<p>LLaMA 的配方进一步展示各类来源的具体处理：Common Crawl 使用 CCNet，代码保留合适许可并应用规则，论文处理 LaTeX，Stack Exchange 按评分组织回答。RedPajama 尝试复现类似组成，SlimPajama 则通过清理和近重复删除得到更小的子集。</p>
+<p>LLaMA 的网页质量分类器以 Wikipedia 引用的外部页面为正例。这些页面具有较多样的网页风格，同时借用了百科引用这一选择信号。课程还追溯了其图书来源与 The Pile、Books3 的关系，说明一个数据集名称背后可能包含多级收集历史；复现配方时，需要沿着这些层级追踪到实际内容。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-032-refinedweb-与-fineweb"><h4>RefinedWeb 与 FineWeb</h4>
+<p>RefinedWeb 从原始 WARC 重新抽取正文，使用质量规则和 MinHash 去重，研究高质量 Web 数据在大规模训练中的作用。FineWeb 延续并扩展这条路线，组合多个 crawl 批次，增加语言和 URL 筛选、去重与部分隐私信息处理<sup class="course-footnote-ref" id="course-footnote-ref-13-11"><a href="#courses?lecture=lecture-13&section=course-footnote-13-11">11</a></sup>。</p>
+<p>课程介绍的 RefinedWeb 从约 5T token 中公开约 600B，FineWeb 则组合多个 crawl 批次得到约 15T token。数据总量、公开子集与实际训练预算分别描述不同规模。规则筛选、模型筛选与多样性之间的关系，在下一部分的现代数据集里表现得更明显。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-033-本章小结"><h4>本章小结</h4>
+<p>数据集演进体现了从少量高质量来源，到多来源组合，再到规模化 Web 清理的路径。每种配方都隐含了对目标行为与可接受成本的选择。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-034-现代配方-dolma-dclm-与-nemotron-cc"><h3>现代配方：Dolma、DCLM 与 Nemotron-CC</h3>
+<section class="course-source-section level-4" id="lecture-13-heading-035-dolma-可追踪的多来源处理"><h4>Dolma：可追踪的多来源处理</h4>
+<p>Dolma 公开了约 3T token 的多来源语料及处理思路<sup class="course-footnote-ref" id="course-footnote-ref-13-12"><a href="#courses?lecture=lecture-13&section=course-footnote-13-12">12</a></sup>。其组成包括 Web、Reddit、PeS2o 学术论文、C4、图书和百科。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_1_-0qqhvu7jd6y9jgsfkjdxw-c351991b.webp" alt="Dolma 的多来源数据组成" width="1058" height="471" loading="lazy"><figcaption>Dolma 的多来源数据组成</figcaption></figure>
+<p>Web 处理包括语言识别、Gopher/C4 风格质量规则、毒性分类及 Bloom-filter 去重。不同来源还需单独处理字段、结构和版本。公开这些步骤，便于区分数据本身和加工算法带来的影响。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-036-dclm-把数据处理变成可比较实验"><h4>DCLM：把数据处理变成可比较实验</h4>
+<p>DCLM 提供大型候选池和固定训练评估框架，使研究者能够比较数据选择方法。课件介绍的 DCLM-pool 约有 240T token，经质量分类器选择后形成约 3.8T token 的 baseline 子集，体现了大候选池到训练语料的强筛选过程。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_dclm-filter-51c45e23.webp" alt="DCLM 从大规模候选池到 baseline 训练子集的筛选管线" width="1800" height="842" loading="lazy"><figcaption>DCLM 从大规模候选池到 baseline 训练子集的筛选管线</figcaption></figure>
+<p>其 fastText 分类器使用高质量 instruction 与 ELI5 问答作正例，以一般 Web 样本作负例。分类器学习“接近所选目标数据”的特征，再高效应用于大量文档。正例选择因此直接定义了它偏好的内容风格。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_dclm-quality-5be436fd.webp" alt="DCLM 质量分类器与其他筛选方法的实验比较" width="1370" height="526" loading="lazy"><figcaption>DCLM 质量分类器与其他筛选方法的实验比较</figcaption></figure>
+<p>结果表支持模型筛选的作用，也连接了 evaluation 与 data：固定评价框架让处理算法可以按训练结果比较，而不只按文本直观判断。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-037-nemotron-cc-质量与长训练的数据余量"><h4>Nemotron-CC：质量与长训练的数据余量</h4>
+<p>高强度过滤可能损失大量可用文本。Nemotron-CC 结合分类器集成、较充分的正文抽取与合成改写，扩大长期训练可用的语料<sup class="course-footnote-ref" id="course-footnote-ref-13-13"><a href="#courses?lecture=lecture-13&section=course-footnote-13-13">13</a></sup>。</p>
+<p>低质量文档可以用模型改写，高质量文档可以生成问答或信息抽取任务。报告介绍的整体规模约为 6.3T token，其中高质量子集约为 1.1T。不同预算下，数据质量与保留量的最优取舍也会变化。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_nemotron-results-9ea58259.webp" alt="Nemotron-CC 在数据处理、合成改写和模型训练上的比较结果" width="1800" height="363" loading="lazy"><figcaption>Nemotron-CC 在数据处理、合成改写和模型训练上的比较结果</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-13-heading-038-本章小结"><h4>本章小结</h4>
+<p>现代数据配方把规则、分类器、去重和合成处理组合起来。目标数据的定义、训练预算与来源覆盖共同决定筛选强度。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-039-代码数据-the-stack-与结构化协作记录"><h3>代码数据：The Stack 与结构化协作记录</h3>
+<p>The Stack 以大规模代码仓库为基础，处理许可、文件筛选和近重复。The Stack v2 与 StarCoder2 进一步组合软件存档、社区元数据、文档和其他代码相关来源<sup class="course-footnote-ref" id="course-footnote-ref-13-14"><a href="#courses?lecture=lecture-13&section=course-footnote-13-14">14</a></sup>。</p>
+<p>代码处理需要识别二进制、恶意文件、机器人活动和隐私信息，还要保留仓库与文件之间的关系。对较少资源的语言，源码与共享中间表示的配对也能提供训练信号。</p>
+<p>PR 数据则需要把结构化对象线性化。问题、评论、修改片段和文件上下文分别带有角色与时间关系，序列化方式决定模型能看到怎样的软件开发过程。 第一段先给出标题、描述、PR 状态和仓库，再组织 base 文件及 diff hunks。文件路径把修改与其所在文件连接起来，base code 则为修改提供上下文。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_stackv2-pr1-f78e36fd.webp" alt="PR 的标题、状态、基础代码与修改片段的序列结构" width="437" height="521" loading="lazy"><figcaption>PR 的标题、状态、基础代码与修改片段的序列结构</figcaption></figure>
+<p>第二段保留一般评论、评审状态、回复目标与评论所指向的局部代码。事件 ID 和回复 ID 连接讨论关系，后续 diff 反映讨论后的改动；在 PR 推进时重复相应结构，就能把一次开发活动组织成可训练序列。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_stackv2-pr2-a6fe3f4b.webp" alt="PR 评论、评审状态、回复关系与局部源码上下文的序列结构" width="691" height="480" loading="lazy"><figcaption>PR 评论、评审状态、回复关系与局部源码上下文的序列结构</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-13-heading-040-本章小结"><h4>本章小结</h4>
+<p>代码语料覆盖从单个文件到完整开发活动。仓库结构、版本关系、许可、重复与上下文组织同样重要。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-041-common-pile-开放许可数据的能力与规模"><h3>Common Pile：开放许可数据的能力与规模</h3>
+<p>Common Pile 收集公共领域和开放许可文本，研究在更明确来源条件下构建大规模模型数据<sup class="course-footnote-ref" id="course-footnote-ref-13-15"><a href="#courses?lecture=lecture-13&section=course-footnote-13-15">15</a></sup>。课件介绍的版本约有 8TB 文本，来源覆盖多种知识和文本形式。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_commonpile-864ac04b.webp" alt="Common Pile 的来源组成和开放许可数据收集" width="1266" height="451" loading="lazy"><figcaption>Common Pile 的来源组成和开放许可数据收集</figcaption></figure>
+<p>来源核查仍有实际难点：转载者可能错误标注许可，集合许可与原作品许可不同，合成内容也继承其数据生成过程的来源问题。明确到文档的记录，是这类数据集的重要工作。</p>
+<p>课程区分了三个具体情形。第一，license laundering 指未经授权转载后重新贴上宽松许可，表面标签无法反映原作者的授权。第二，整理后的集合可以拥有自己的许可，底层文档仍可能有各自的权利条件。第三，Common Pile 选择不纳入合成数据，是为了保持其对数据来源的要求：生成模型的权重许可，并不直接回答它的训练文本从何而来。这些决定都影响候选数据的覆盖范围。</p>
+<p>Comma 模型实验展示了这些数据可以支撑有竞争力的训练，同时也显示可用 token 规模仍会影响结果。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-13/figures/official_comma-results-774b3fcd.webp" alt="Common Pile 上训练的 Comma 模型及其能力比较" width="1800" height="560" loading="lazy"><figcaption>Common Pile 上训练的 Comma 模型及其能力比较</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-13-heading-042-本章小结"><h4>本章小结</h4>
+<p>明确许可与扩大规模需要一起推进。来源质量、内容覆盖和可用 token 数共同影响最终模型。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-13-heading-043-总结与课堂讨论"><h3>总结与课堂讨论</h3>
+<p>本讲建立了一条完整链路：在线服务提供动态内容，crawl 或 dump 形成快照，抽取与筛选形成候选训练文本，混合与采样决定模型实际看到什么。不同来源还携带许可、结构、时间和质量信息。</p>
+<p>课堂问答涉及来源之间的重复、抓取与存档的区别、代码元数据怎样参与训练，以及如何判断某类文本的质量。它们都指向同一个实践方法：先查看具体数据对象，再决定处理规则和评价方式。</p>
+<p>下一讲将这些选择转成算法：如何从原始文档抽取文本，怎样训练目标分类器，如何近似比较海量文档，以及怎样用小规模实验选择混合比例。</p>
+<section class="course-source-section level-4" id="lecture-13-heading-044-本章小结"><h4>本章小结</h4>
+<p>语言模型数据工作同时处理内容、工程和来源关系。公开、可追踪的配方使我们能够分析模型能力从何而来，并逐步改进训练信号。</p>
+</section>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-13-1">Lambert et al., 2024. <em>Tulu 3: Pushing Frontiers in Open Language Model Post-Training</em>. <a href="https://arxiv.org/abs/2411.15124" target="_blank" rel="noopener noreferrer">arXiv:2411.15124</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-2">Longpre et al., 2024. <em>Consent in Crisis: The Rapid Decline of the AI Data Commons</em>. <a href="https://arxiv.org/abs/2407.14933" target="_blank" rel="noopener noreferrer">arXiv:2407.14933</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-2" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-3">U.S. Copyright Office. <em>Copyright Law of the United States</em>, Title 17, Chapters 1 and 3. <a href="https://www.copyright.gov/title17/" target="_blank" rel="noopener noreferrer">美国版权法官方文本</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-3" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-4">17 U.S.C. §107. <em>Limitations on Exclusive Rights: Fair Use</em>. <a href="https://www.copyright.gov/title17/92chap1.html#107" target="_blank" rel="noopener noreferrer">Section 107 官方文本</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-4" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-5">U.S. District Court, N.D. California, 2025. <em>Bartz v. Anthropic PBC</em>, No. 3:24-cv-05417, Order on Fair Use, June 23, 2025. <a href="https://www.govinfo.gov/content/pkg/USCOURTS-cand-3_24-cv-05417/pdf/USCOURTS-cand-3_24-cv-05417-0.pdf" target="_blank" rel="noopener noreferrer">法院裁定原文</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-5" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-6">Common Crawl. <em>Overview and Crawl Data</em>. <a href="https://commoncrawl.org/overview" target="_blank" rel="noopener noreferrer">Common Crawl 官方说明</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-6" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-7">Li et al., 2024. <em>DataComp-LM: In Search of the Next Generation of Training Sets for Language Models</em>. <a href="https://arxiv.org/abs/2406.11794" target="_blank" rel="noopener noreferrer">arXiv:2406.11794</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-7" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-8">Wenzek et al., 2020. <em>CCNet: Extracting High Quality Monolingual Datasets from Web Crawl Data</em>. LREC 2020. <a href="https://arxiv.org/abs/1911.00359" target="_blank" rel="noopener noreferrer">arXiv:1911.00359</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-8" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-9">Raffel et al., 2020. <em>Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</em>. JMLR 2020. <a href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener noreferrer">arXiv:1910.10683</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-9" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-10">Gao et al., 2020. <em>The Pile: An 800GB Dataset of Diverse Text for Language Modeling</em>. <a href="https://arxiv.org/abs/2101.00027" target="_blank" rel="noopener noreferrer">arXiv:2101.00027</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-10" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-11">Hugging Face. <em>FineWeb</em>. <a href="https://huggingface.co/datasets/HuggingFaceFW/fineweb" target="_blank" rel="noopener noreferrer">官方数据集说明</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-11" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-12">Soldaini et al., 2024. <em>Dolma: An Open Corpus of Three Trillion Tokens for Language Model Pretraining Research</em>. <a href="https://arxiv.org/abs/2402.00159" target="_blank" rel="noopener noreferrer">arXiv:2402.00159</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-12" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-13">NVIDIA, 2024. <em>Nemotron-CC: Transforming Common Crawl into a Refined Long-Horizon Pretraining Dataset</em>. <a href="https://arxiv.org/abs/2412.02595" target="_blank" rel="noopener noreferrer">arXiv:2412.02595</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-13" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-14">Lozhkov et al., 2024. <em>StarCoder 2 and The Stack v2: The Next Generation</em>. <a href="https://arxiv.org/abs/2402.19173" target="_blank" rel="noopener noreferrer">arXiv:2402.19173</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-14" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-13-15">Kandpal et al., 2025. <em>The Common Pile v0.1: An 8TB Dataset of Public Domain and Openly Licensed Text</em>. <a href="https://arxiv.org/abs/2506.05209" target="_blank" rel="noopener noreferrer">arXiv:2506.05209</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-13&section=course-footnote-ref-13-15" aria-label="返回正文">↩</a></li>
+</ol></section>

@@ -1,0 +1,66 @@
+<section class="course-source-section level-3" id="lecture-09-heading-001-为什么需要-scaling-laws"><h3>为什么需要 Scaling Laws</h3>
+<p>如果目标是用固定计算预算训练一个尽可能好的语言模型，直接在最终规模上搜索架构、优化器、batch size 和数据配方成本极高。Scaling law 的目标是用许多便宜的小实验拟合简单、可外推的规律，再预测大模型的损失或最优配置。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p04-98695db5.webp" alt="Scaling law 用小规模实验预测更大训练的性能" width="1800" height="1014" loading="lazy"><figcaption>Scaling law 用小规模实验预测更大训练的性能</figcaption></figure>
+<p>Scaling law 不是“训练越大一定越好”的口号，而是一个带有适用范围的经验模型。它要求实验使用相近的架构、数据分布、优化策略和计算 regime；当数据重复、优化器、上下文或下游任务发生变化时，规律可能需要重新拟合。</p>
+</section>
+<section class="course-source-section level-3" id="lecture-09-heading-002-数据-scaling-幂律与样本复杂度"><h3>数据 Scaling：幂律与样本复杂度</h3>
+<section class="course-source-section level-4" id="lecture-09-heading-003-历史与形式"><h4>历史与形式</h4>
+<p>早期统计学习和神经网络研究已经观察到，数据量增加时误差通常下降；在语言模型中，测试 loss 与数据量常在 log-log 坐标上近似线性。常见形式为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="L(D)=L_\infty+A D^{-\alpha},"><mrow><mi>L</mi><mo stretchy="false">(</mo><mi>D</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>L</mi><mo>∞</mo></msub><mo>+</mo><mi>A</mi><msup><mi>D</mi><mrow><mo>−</mo><mi>α</mi></mrow></msup><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 是训练 token 数，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="L_\infty"><mrow><msub><mi>L</mi><mo>∞</mo></msub></mrow></math></span> 是不可约损失，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="A"><mrow><mi>A</mi></mrow></math></span> 和 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\alpha"><mrow><mi>α</mi></mrow></math></span> 由模型、任务和数据分布决定。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p10-ed5174b8.webp" alt="早期神经网络数据 scaling 的可预测趋势" width="1800" height="1014" loading="lazy"><figcaption>早期神经网络数据 scaling 的可预测趋势</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p12-ce6ad9c9.webp" alt="语言模型 scaling 中数据、模型和性能的关系" width="1800" height="1014" loading="lazy"><figcaption>语言模型 scaling 中数据、模型和性能的关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p13-19075bf8.webp" alt="多个现象中反复出现的幂律关系" width="1800" height="1014" loading="lazy"><figcaption>多个现象中反复出现的幂律关系</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p15-c250dd96.webp" alt="语言模型 loss 与数据规模在 log-log 坐标中的关系" width="1800" height="1014" loading="lazy"><figcaption>语言模型 loss 与数据规模在 log-log 坐标中的关系</figcaption></figure>
+<p>幂律的意义在于边际收益可以预测：增加数据仍然有帮助，但每增加同样数量的 token 带来的 loss 改善会变小。数据 scaling 也可以与样本复杂度联系起来：估计误差随样本数按某个多项式速率下降，log-log 图因此近似直线。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p17-8eb59b30.webp" alt="均值估计中的样本误差作为 scaling law 的玩具例子" width="1800" height="1014" loading="lazy"><figcaption>均值估计中的样本误差作为 scaling law 的玩具例子</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p21-a25e8876.webp" alt="数据组成和数据混合也会形成 scaling 问题" width="1800" height="1014" loading="lazy"><figcaption>数据组成和数据混合也会形成 scaling 问题</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p24-07c5c993.webp" alt="有限数据重复使用时的有效数据量变化" width="1800" height="1014" loading="lazy"><figcaption>有限数据重复使用时的有效数据量变化</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-09-heading-004-数据混合与重复"><h4>数据混合与重复</h4>
+<p>不同来源的质量、领域和重复程度不同。混合比例可以看作待优化变量，先在小规模模型上评估，再预测大规模配方。有限数据重复时，名义 token 数不等于有效新信息；重复次数越高，边际收益越低。</p>
+<p>Scaling law 因此可以指导自适应数据选择：小模型训练更适合高质量小集合，训练预算扩大后需要更多多样数据，不能把小规模最优集合无限重复。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-09-heading-005-架构和训练决策的-scaling"><h3>架构和训练决策的 Scaling</h3>
+<p>Scaling law 不只预测 loss，也可以比较架构、优化器、深度、宽度、MoE 和 batch size。方法是为每个候选设计运行一组不同规模的实验，再比较它们的 scaling 曲线和外推截距。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p28-032c18ef.webp" alt="Scaling law 用于模型架构和训练决策的设计" width="1800" height="1014" loading="lazy"><figcaption>Scaling law 用于模型架构和训练决策的设计</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p30-5ee1821c.webp" alt="Transformer 与 LSTM 的跨架构 scaling 比较" width="1800" height="1014" loading="lazy"><figcaption>Transformer 与 LSTM 的跨架构 scaling 比较</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p31-07cdbad1.webp" alt="多种架构在统一 scaling 框架下的比较" width="1800" height="1014" loading="lazy"><figcaption>多种架构在统一 scaling 框架下的比较</figcaption></figure>
+<p>如果一个架构在小模型上具有更低 loss，仍要确认它的收益是否随规模保持；某些设计只减少常数项，另一些会改变 scaling 指数。架构选择、优化器选择和宽深比都可以通过这种方式提前筛选。</p>
+<section class="course-source-section level-4" id="lecture-09-heading-006-moe-与参数的价值"><h4>MoE 与参数的价值</h4>
+<p>MoE 让总参数量和每 token 激活参数量分离，因此“参数量”不再是唯一的规模轴。应同时记录 total parameters、active parameters、训练 FLOPs 和通信成本。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p40-08cbfff6.webp" alt="muP 与 scale-aware 学习率让超参数随模型规模迁移" width="1800" height="1014" loading="lazy"><figcaption>muP 与 scale-aware 学习率让超参数随模型规模迁移</figcaption></figure>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-09-heading-007-critical-batch-size-与学习率"><h3>Critical Batch Size 与学习率</h3>
+<p>增大 batch size 可以提高吞吐，但超过 critical batch size 后，额外样本对达到目标 loss 的帮助变小。critical batch size 依赖目标 loss：目标越严格，允许的有效 batch 往往越大。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p37-c109baba.webp" alt="critical batch size 与目标 loss 的关系" width="1800" height="1014" loading="lazy"><figcaption>critical batch size 与目标 loss 的关系</figcaption></figure>
+<p>学习率也不一定能在不同模型规模间直接复用。muP 等参数化方法通过调整初始化、学习率和参数化规则，使最优超参数在宽度变化时更稳定地迁移<sup class="course-footnote-ref" id="course-footnote-ref-09-1"><a href="#courses?lecture=lecture-09&section=course-footnote-09-1">1</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p44-8e262fb1.webp" alt="联合数据-模型 scaling law 用小模型预测大规模配置" width="1800" height="1014" loading="lazy"><figcaption>联合数据-模型 scaling law 用小模型预测大规模配置</figcaption></figure>
+</section>
+<section class="course-source-section level-3" id="lecture-09-heading-008-kaplan-与-chinchilla-计算最优的不同结论"><h3>Kaplan 与 Chinchilla：计算最优的不同结论</h3>
+<p>联合 scaling law 同时拟合模型参数 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="N"><mrow><mi>N</mi></mrow></math></span>、数据量 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 和计算量 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="C"><mrow><mi>C</mi></mrow></math></span>：</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="L(N,D)=L_\infty+aN^{-\alpha}+bD^{-\beta}, \qquad C\propto ND."><mrow><mi>L</mi><mo stretchy="false">(</mo><mi>N</mi><mo>,</mo><mi>D</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>L</mi><mo>∞</mo></msub><mo>+</mo><mi>a</mi><msup><mi>N</mi><mrow><mo>−</mo><mi>α</mi></mrow></msup><mo>+</mo><mi>b</mi><msup><mi>D</mi><mrow><mo>−</mo><mi>β</mi></mrow></msup><mo>,</mo><mspace width="2em" /><mi>C</mi><mo>∝</mo><mi>N</mi><mi>D</mi><mo>.</mo></mrow></math></figure>
+<p>在固定计算预算下，可以求出模型规模和 token 数之间的最优平衡。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p46-e59e5ac2.webp" alt="Chinchilla 使用多种方法拟合计算最优 scaling" width="1800" height="1014" loading="lazy"><figcaption>Chinchilla 使用多种方法拟合计算最优 scaling</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p48-4c200a1e.webp" alt="IsoFLOPs 曲线上的最优模型与数据组合" width="1800" height="1014" loading="lazy"><figcaption>IsoFLOPs 曲线上的最优模型与数据组合</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p49-e1ac82ac.webp" alt="在模型-数据网格上进行联合拟合" width="1800" height="1014" loading="lazy"><figcaption>在模型-数据网格上进行联合拟合</figcaption></figure>
+<p>Kaplan 等人的早期结论倾向于更大的模型和相对较少的训练 token；Chinchilla 认为许多模型训练不足，固定计算下应同时增加模型和数据<sup class="course-footnote-ref" id="course-footnote-ref-09-2"><a href="#courses?lecture=lecture-09&section=course-footnote-09-2">2</a></sup>。</p>
+<section class="course-source-section level-4" id="lecture-09-heading-009-为什么会得到不同结果"><h4>为什么会得到不同结果</h4>
+<p>两种结论的差异可能来自参数计数方式、是否包含 embedding、warmup、学习率和衰减设置、计算预算范围，以及拟合方法对小规模数据的敏感性。Chinchilla 论文提出 minimum-over-runs、IsoFLOPs 和 joint fit 等方法；它们在数据选择和拟合目标上并不完全相同。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p54-cfcb86b4.webp" alt="训练计算最优不等于部署总成本最优" width="1800" height="1014" loading="lazy"><figcaption>训练计算最优不等于部署总成本最优</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p56-a9763f96.webp" alt="Scaling law 可以同时预测模型参数、数据和计算量" width="1800" height="1014" loading="lazy"><figcaption>Scaling law 可以同时预测模型参数、数据和计算量</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-09/figures/official_p57-27125fd5.webp" alt="Scaling laws 的数据、模型和工程结论总结" width="1800" height="1014" loading="lazy"><figcaption>Scaling laws 的数据、模型和工程结论总结</figcaption></figure>
+<p>训练最优只针对训练计算预算。如果部署阶段会重复进行大量推理，或者模型需要更强的低延迟服务能力，真实目标可能偏向更小模型、更长训练或不同数据配方。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-09-heading-010-实践方法与限制"><h3>实践方法与限制</h3>
+<p>使用 scaling law 的基本流程是：定义目标指标，选择一组小规模配置，保持数据和优化条件可比，运行足够多的点，拟合带有残差检查的函数，再把预测带到目标规模验证。每次外推都要记录适用范围。</p>
+<p>Scaling law 的价值是减少昂贵试错，并帮助解释参数、数据、计算和 batch size 之间的关系；它不是保证未来结果的理论定理。下游能力、数据分布变化、架构突变和有限数据重复都可能让简单幂律失效。</p>
+<p>下一讲进入 inference，会把本讲关于计算和规模的视角转到服务阶段：同一模型的 prefill、decode、KV cache 和批处理会产生不同的性能目标。</p>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-09-1">Yang et al., 2022. <em>Tensor Programs V: Tuning Large Neural Networks via Zero-Shot Hyperparameter Transfer</em>. ICML 2022. <a href="https://arxiv.org/abs/2203.03466" target="_blank" rel="noopener noreferrer">arXiv:2203.03466</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-09&section=course-footnote-ref-09-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-09-2">Kaplan et al., 2020. <em>Scaling Laws for Neural Language Models</em>. <a href="https://arxiv.org/abs/2001.08361" target="_blank" rel="noopener noreferrer">arXiv:2001.08361</a>; Hoffmann et al., 2022. <em>Training Compute-Optimal Large Language Models</em>. NeurIPS 2022. <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener noreferrer">arXiv:2203.15556</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-09&section=course-footnote-ref-09-2" aria-label="返回正文">↩</a></li>
+</ol></section>

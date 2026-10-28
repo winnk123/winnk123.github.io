@@ -42,7 +42,7 @@ Windows 或 macOS 可安装 GitHub Desktop：https://desktop.github.com/ 。登�
 | 内容 | 编辑位置 |
 | --- | --- |
 | 知识讲解、论文精读、正文公式、读图说明 | `content/guides.json` 中对应文章的 `knowledge` |
-| 基础课程、逐讲文章与公式/配图索引 | `content/courses.json`、`content/course-articles.json`；课程图片位于 `dist/assets/courses/` |
+| 基础课程、逐讲文章与公式/配图索引 | `content/courses.json`、`content/course-articles.json`（导读）；完整正文和索引在 `dist/course-articles/cs336/`，图片在 `dist/assets/courses/cs336/` |
 | 新增前沿条目 | `content/frontier.json` |
 | 机器人论文入口与分类 | `content/robot-papers.json` |
 | 论文原图索引、出处 | `content/paper-figures.json` |
@@ -56,6 +56,23 @@ Windows 或 macOS 可安装 GitHub Desktop：https://desktop.github.com/ 。登�
 公式的 `latex` 保存 LaTeX 源码，`plain` 保存可朗读的含义。构建时自动生成 `mathml` 和 `mathmlSource`，再同步浏览器数据。保留 JSON 的引号、逗号与括号。发布后的公式生成结果由 Actions 构建并上传，无需回写到 GitHub 源文件。
 
 首页部分旧前沿条目保存在 `dist/app.js` 的 `news` 定义中；新增内容统一写入 `content/frontier.json`。
+
+## CS336 完整笔记迁移
+
+课程页保留源笔记完整正文，而不是重新概括。章节、列表、代码、脚注与表格转为语义 HTML；公式为静态 MathML；知识框、重点框和警示框使用站内样式。仅迁移正文引用的图像，课件图页转为 WebP，不发布讲义 PDF、视频或 TeX 源文件。
+
+更新源笔记后，在网站仓库根目录运行（`CS336/` 默认为同级目录）：
+
+```sh
+python3 -m pip install -r requirements-migration.txt
+python3 scripts/migrate-course-notes.py --source ../CS336
+python3 scripts/check-course-articles.py --source ../CS336
+node scripts/build-site.mjs
+```
+
+图表转换需要系统工具 `pdftoppm`（Poppler）与 `convert`（ImageMagick）。可用 `--lecture 16` 只更新一讲；`--output` 只接受以 `course-articles/cs336` 结尾的站点目录，图片会放到对应 `assets/courses/cs336`。源 `CS336` 文件不会被修改。
+
+`dist/course-articles/cs336/index.json` 记录每讲目录、完整搜索文本和源内容覆盖统计。带 `--source` 的审计检查源正文片段与代码保留，以及标题、图片、重点框、表格和脚注数量。普通发布只检查提交的 HTML/索引/WebP，不依赖同级仓库、TeX 编译器、pylatexenc 或图像转换工具。
 
 ## 自动发布做了什么
 

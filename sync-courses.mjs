@@ -1,24 +1,23 @@
 import {existsSync,readFileSync,writeFileSync} from 'node:fs';
-import path from 'node:path';
 
 const root=new URL('./',import.meta.url);
 const courses=JSON.parse(readFileSync(new URL('content/courses.json',root),'utf8')).courses;
-const articles=JSON.parse(readFileSync(new URL('content/course-articles.json',root),'utf8'));
-if(courses.length!==1||articles.courseId!==courses[0].id)throw new Error('Course/article data do not match.');
-const articleById=new Map(articles.lectures.map(article=>[article.lectureId,article]));
-if(articleById.size!==articles.lectures.length)throw new Error('Duplicate course article id.');
+const summaries=JSON.parse(readFileSync(new URL('content/course-articles.json',root),'utf8'));
+const migrated=JSON.parse(readFileSync(new URL('dist/course-articles/cs336/index.json',root),'utf8'));
+if(courses.length!==1||summaries.courseId!==courses[0].id||migrated.courseId!==courses[0].id)throw new Error('Course/article data do not match.');
+const summariesById=new Map(summaries.lectures.map(article=>[article.lectureId,article]));
+const migratedById=new Map(migrated.lectures.map(article=>[article.lectureId,article]));
+if(summariesById.size!==summaries.lectures.length||migratedById.size!==migrated.lectures.length)throw new Error('Duplicate course article id.');
+
 for(const course of courses)for(const lecture of course.lectures){
- const article=articleById.get(lecture.id);
- if(!article||!article.lead||!article.takeaway||!Array.isArray(article.sections)||article.sections.length<3)throw new Error(`Incomplete native article: ${lecture.id}`);
- for(const section of article.sections){
-  if(!section.title||!Array.isArray(section.paragraphs)||section.paragraphs.length<1)throw new Error(`Incomplete section: ${lecture.id}/${section.title}`);
-  if(section.figure){
-   if(!/^figures\/[a-z0-9._-]+$/i.test(section.figure.src))throw new Error(`Invalid course figure path: ${section.figure.src}`);
-   const relative=`dist/assets/courses/${course.id}/${lecture.id.replace('lecture-','lecture-')}/${path.basename(section.figure.src)}`;
-   if(!existsSync(new URL(relative,root)))throw new Error(`Missing course figure: ${relative}`);
-  }
- }
- lecture.article=article;
+ const summary=summariesById.get(lecture.id);
+ const article=migratedById.get(lecture.id);
+ if(!summary?.lead||!summary.takeaway||!article?.toc?.length||article.textCharacters<500)throw new Error(`Incomplete migrated article: ${lecture.id}`);
+ const relative=article.file.replace(/^\.\//,'');
+ const file=new URL(`dist/${relative}`,root);
+ if(!relative.startsWith('course-articles/cs336/')||!existsSync(file))throw new Error(`Missing native article HTML: ${article.file}`);
+ lecture.article={...summary,...article};
 }
+
 writeFileSync(new URL('dist/course-data.js',root),'globalThis.ATLAS_COURSES = '+JSON.stringify(courses,null,2)+';\n');
-console.log(`Synced ${courses.length} courses, ${articles.lectures.length} native articles and ${courses.reduce((n,course)=>n+course.lectures.length,0)} lectures.`);
+console.log(`Synced ${courses.length} courses and ${migrated.lectures.length} complete native articles (${migrated.lectures.reduce((sum,item)=>sum+item.textCharacters,0).toLocaleString()} visible text characters).`);

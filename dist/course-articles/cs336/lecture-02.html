@@ -1,0 +1,187 @@
+<section class="course-source-section level-3" id="lecture-02-heading-001-资源核算的目标-先知道瓶颈在哪里"><h3>资源核算的目标：先知道瓶颈在哪里</h3>
+<p>第1讲从 tokenizer 和课程全局结构开始，本讲进入 systems 单元。Percy Liang 用一个 Marin 项目的大规模实验开场：先用较小模型组成 IsoFLOPs 曲线，拟合 scaling law，再运行更大的模型验证预测。预测损失与实际损失相差约 0.05，说明小规模实验可以在一定条件下帮助判断更大训练的趋势，但这种外推仍依赖模型、数据和实现是否保持在相近的 regime。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_he1p1hmauaajlxf-8e5bf394.webp" alt="Marin 项目中由小规模实验预测大规模训练结果的示例" width="1000" height="600" loading="lazy"><figcaption>Marin 项目中由小规模实验预测大规模训练结果的示例</figcaption></figure>
+<p>课程系统部分关注一个实际问题：给定有限的计算、显存、带宽和数据，怎样训练出尽可能好的模型。优化程序之前，必须先估算程序会使用哪些资源。资源核算的目标不是得到每个硬件计数器都完全精确的数字，而是快速判断数量级、主要瓶颈和值得优化的方向。</p>
+<p>本讲延续上一讲的三类学习目标：</p>
+<ul class="course-itemize"><li><p><strong>Mechanics：</strong>理解 PyTorch 张量、自动微分、优化器和训练循环的具体语义；</p></li><li><p><strong>Mindset：</strong>每写一段代码，都考虑它读取和写入多少数据、进行了多少 FLOPs、是否需要通信；</p></li><li><p><strong>Intuitions：</strong>形成对显存、算力、带宽和 batch size 之间关系的数量级判断。</p></li></ul>
+<section class="course-source-section level-4" id="lecture-02-heading-002-两个数量级估算"><h4>两个数量级估算</h4>
+<section class="course-source-section level-6" id="lecture-02-heading-003-section"><h6></h6>
+<p>训练时间。</p>
+<p>对参数量为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="N"><mrow><mi>N</mi></mrow></math></span>、训练 token 数为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 的 dense Transformer，常用的训练 FLOPs 估算为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="C\approx 6ND."><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mi>N</mi><mi>D</mi><mo>.</mo></mrow></math></figure>
+<p>如果要训练一个 70B 参数模型、使用 15T token，则</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="C\approx 6\times 70\times10^9\times15\times10^{12} =6.3\times10^{24}\text{ FLOPs}."><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mo>×</mo><mn>70</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mo>×</mo><mn>15</mn><mo>×</mo><msup><mn>10</mn><mrow><mn>12</mn></mrow></msup><mo>=</mo><mn>6.3</mn><mo>×</mo><msup><mn>10</mn><mrow><mn>24</mn></mrow></msup><mtext> FLOPs</mtext><mo>.</mo></mrow></math></figure>
+<p>假设使用 1024 张 H100，每张卡的有效利用率以 MFU <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="=0.5"><mrow><mo>=</mo><mn>0.5</mn></mrow></math></span> 估计，则可以用硬件峰值乘以 MFU、GPU 数量和每天的秒数，得到约 143 天的数量级。这个估算忽略了通信、输入管线、故障和利用率变化，但足以说明大模型训练为什么需要系统工程。</p>
+</section>
+<section class="course-source-section level-6" id="lecture-02-heading-004-section"><h6></h6>
+<p>显存能容纳多大的模型。</p>
+<p>以 AdamW 和 BF16 参数为例，一份参数需要约 2 bytes，一份梯度约 2 bytes，Adam 的一阶和二阶状态各约 4 bytes，总计约 12 bytes/parameter。8 张每张 80GB 的 H100 给出的上界约为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\frac{8\times80\text{ GB}}{12\text{ bytes/parameter}} \approx 53\text{B parameters}."><mrow><mfrac><mrow><mn>8</mn><mo>×</mo><mn>80</mn><mtext> GB</mtext></mrow><mrow><mn>12</mn><mtext> bytes/parameter</mtext></mrow></mfrac><mo>≈</mo><mn>53</mn><mtext>B parameters</mtext><mo>.</mo></mrow></math></figure>
+<p>这个数字还没有计算激活、临时张量和通信缓冲，因此它只是容量上界。batch size、sequence length 和网络深度会进一步决定训练时能否真正放下模型。</p>
+</section>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-005-本章小结"><h4>本章小结</h4>
+<p>资源核算把“模型很大”转成 FLOPs、bytes、带宽和时间。<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="6ND"><mrow><mn>6</mn><mi>N</mi><mi>D</mi></mrow></math></span> 解释训练计算量，参数、梯度和优化器状态解释显存下界；后面还要加入激活、张量形状和算子的读写行为。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-006-tensor-所有资源对象的共同表示"><h3>Tensor：所有资源对象的共同表示</h3>
+<section class="course-source-section level-4" id="lecture-02-heading-007-形状-阶数和存储对象"><h4>形状、阶数和存储对象</h4>
+<p>在 PyTorch 中，tensor 是保存模型相关对象的基本结构。参数、梯度、优化器状态、输入数据和中间激活都可以表示为 tensor。tensor 的 rank 是维度数量：向量是 rank 1，矩阵是 rank 2，Transformer 中常见的表示可以是</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="X\in\mathbb{R}^{B\times S\times H\times D},"><mrow><mi>X</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>B</mi><mo>×</mo><mi>S</mi><mo>×</mo><mi>H</mi><mo>×</mo><mi>D</mi></mrow></msup><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="B"><mrow><mi>B</mi></mrow></math></span> 是 batch size，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="S"><mrow><mi>S</mi></mrow></math></span> 是 sequence length，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="H"><mrow><mi>H</mi></mrow></math></span> 是 attention head 数，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 是每个 head 的维度。</p>
+<p>形状不是注释，而是资源核算的入口。元素数量等于各维度乘积；存储量还要乘以每个元素的字节数；矩阵乘法的 FLOPs 则由参与乘法的维度决定。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-008-浮点精度与字节数"><h4>浮点精度与字节数</h4>
+<p>一个 tensor 的内存大小可以写成</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{bytes}(X)=\left(\prod_i d_i\right)\times b,"><mrow><mo>bytes</mo><mo stretchy="false">(</mo><mi>X</mi><mo stretchy="false">)</mo><mo>=</mo><mrow><mo stretchy="true" fence="true" form="prefix">(</mo><msub><mo>∏</mo><mi>i</mi></msub><msub><mi>d</mi><mi>i</mi></msub><mo stretchy="true" fence="true" form="postfix">)</mo></mrow><mo>×</mo><mi>b</mi><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="d_i"><mrow><msub><mi>d</mi><mi>i</mi></msub></mrow></math></span> 是各维度，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="b"><mrow><mi>b</mi></mrow></math></span> 是每个元素的字节数。常见浮点格式的主要差别是指数位、尾数位和总位宽：</p>
+<ul class="course-itemize"><li><p>FP32 使用 32 bit，即 4 bytes，数值范围和精度都较充足；</p></li><li><p>FP16 使用 16 bit，即 2 bytes，但指数范围较窄；</p></li><li><p>BF16 同样使用 16 bit，但保留更多指数位，动态范围接近 FP32，尾数精度较低；</p></li><li><p>FP8 使用 8 bit，即 1 byte，训练时通常需要缩放因子和混合精度策略；</p></li><li><p>更低精度格式可以继续减少存储和带宽，但对缩放、舍入和数值稳定性的要求更高。</p></li></ul>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_fp32-2f5182ce.webp" alt="FP32 的位级组成与可表示数值" width="1800" height="228" loading="lazy"><figcaption>FP32 的位级组成与可表示数值</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_fp16-528ab733.webp" alt="FP16 的位分配和动态范围" width="1081" height="281" loading="lazy"><figcaption>FP16 的位分配和动态范围</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_bf16-45f8d48c.webp" alt="BF16 与 FP32 动态范围和精度之间的折中" width="1096" height="277" loading="lazy"><figcaption>BF16 与 FP32 动态范围和精度之间的折中</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_fp8_formats-3e9226fd.webp" alt="FP8 格式在低精度训练中的表示方式" width="1280" height="720" loading="lazy"><figcaption>FP8 格式在低精度训练中的表示方式</figcaption></figure>
+<p>混合精度训练通常让矩阵乘法使用较低精度，以减少显存和提高吞吐，同时保留部分 FP32 状态或用 loss scaling 防止梯度下溢。低精度并不只是把所有 tensor 机械地转换成更小的 dtype；哪些对象可以低精度保存、哪些累加需要更高精度，是训练稳定性的一部分。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-009-cpu-gpu-与数据移动"><h4>CPU、GPU 与数据移动</h4>
+<p>默认情况下，PyTorch tensor 位于 CPU 内存。GPU 计算需要把 tensor 移到设备显存，或者在指定 device 上直接创建。GPU 拥有大量并行计算单元，但显存和 CPU 内存是不同的存储空间；把 tensor 放在错误的位置会造成额外复制，甚至直接触发 device mismatch 错误。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_cpu-gpu-a27f4a41.webp" alt="CPU 内存、GPU 显存与张量传输之间的关系" width="850" height="273" loading="lazy"><figcaption>CPU 内存、GPU 显存与张量传输之间的关系</figcaption></figure>
+<p>训练性能不仅取决于 GPU 峰值算力，也取决于数据能否及时到达计算单元。参数、激活和梯度可能在 HBM、片上缓存、主机内存和多 GPU 互联之间移动。资源核算因此必须同时记录计算量与数据移动量。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-010-本章小结"><h4>本章小结</h4>
+<p>Tensor 的形状决定元素数量，dtype 决定每个元素的字节数，device 决定数据是否需要跨存储层级移动。显存估算和算子性能分析都从这三个属性开始。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-011-einops-用名字表达张量运算"><h3>Einops：用名字表达张量运算</h3>
+<section class="course-source-section level-4" id="lecture-02-heading-012-为什么需要显式写出维度"><h4>为什么需要显式写出维度</h4>
+<p>PyTorch 原生写法经常使用负索引和隐含 broadcasting。例如 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="x@y^T"><mrow><mi>x</mi><mi>@</mi><msup><mi>y</mi><mi>T</mi></msup></mrow></math></span> 中的 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="-2"><mrow><mo>−</mo><mn>2</mn></mrow></math></span>、<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="-1"><mrow><mo>−</mo><mn>1</mn></mrow></math></span> 只有结合当前 rank 才能理解；当 batch、sequence、head 和 hidden 维度同时出现时，转置或 reshape 写错一个位置，代码仍可能运行但得到错误结果。</p>
+<p>Einops 的核心思想是把维度名称写进表达式，让输入、输出和被求和的维度同时可见。它不改变线性代数运算本身，而是减少形状推理的隐式部分。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-013-einsum-带有维度账本的乘法"><h4>Einsum：带有维度账本的乘法</h4>
+<p>普通矩阵乘法</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="Z=XW"><mrow><mi>Z</mi><mo>=</mo><mi>X</mi><mi>W</mi></mrow></math></figure>
+<p>要求 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="X"><mrow><mi>X</mi></mrow></math></span> 的最后一维和 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="W"><mrow><mi>W</mi></mrow></math></span> 的倒数第二维相等。Einops 写法可以直接说明这些维度：</p>
+<figure class="course-code-block"><div class="course-code-caption">用 einops.einsum 表达矩阵乘法</div><pre><code class="language-python">from einops import einsum
+
+x = torch.ones(3, 4)   # seq1 hidden
+y = torch.ones(4, 3)   # hidden seq2
+z = einsum(x, y, "seq1 hidden, hidden seq2 -&gt; seq1 seq2")</code></pre></figure>
+<p>没有出现在输出表达式中的维度会被求和。对于 batch 中每个样本分别计算两组序列之间的相似度，可以写成：</p>
+<figure class="course-code-block"><div class="course-code-caption">显式表示 batch 和两个序列维度</div><pre><code class="language-python">x = torch.ones(2, 3, 4)   # batch seq1 hidden
+y = torch.ones(2, 3, 4)   # batch seq2 hidden
+z = einsum(x, y,
+           "batch seq1 hidden, batch seq2 hidden -&gt; batch seq1 seq2")</code></pre></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-014-reduce-与-rearrange"><h4>Reduce 与 rearrange</h4>
+<p>Reduce 把指定维度上的多个元素合并为一个值。例如</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="y_{b,s}=\sum_h x_{b,s,h}"><mrow><msub><mi>y</mi><mrow><mi>b</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>h</mi></munder><msub><mi>x</mi><mrow><mi>b</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>h</mi></mrow></msub></mrow></math></figure>
+<p>可以写成 `<code>reduce(x, "... hidden -&gt; ...", "sum")</code>`。省略号表示任意数量的前置维度。</p>
+<p>Rearrange 用于拆分或合并一个复合维度。若最后一维实际表示两个 head 的 hidden 维度，可以写成：</p>
+<figure class="course-code-block"><div class="course-code-caption">拆分和重新合并复合维度</div><pre><code class="language-python">x = rearrange(x, "... (heads hidden1) -&gt; ... heads hidden1", heads=2)
+x = einsum(x, w, "... hidden1, hidden1 hidden2 -&gt; ... hidden2")
+x = rearrange(x, "... heads hidden2 -&gt; ... (heads hidden2)")</code></pre></figure>
+<p>这类表达式把 reshape、transpose 和 contraction 的关系放到同一处检查。对 attention、multi-head projection 和 batch 维度复杂的算子，维度命名能够减少维护成本。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-015-本章小结"><h4>本章小结</h4>
+<p>Einops 的价值在于让张量维度成为代码的一部分。Einsum 表达相乘和求和关系，reduce 表达沿维度聚合，rearrange 表达拆分和合并。它们不能替代资源核算，但能让形状和计算对象更容易被检查。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-016-flops-与训练计算量"><h3>FLOPs 与训练计算量</h3>
+<section class="course-source-section level-4" id="lecture-02-heading-017-flops-与-flop-s"><h4>FLOPs 与 FLOP/s</h4>
+<p>FLOP 是一次浮点运算，例如加法或乘法；FLOP/s 是硬件每秒执行浮点运算的速度。两者常被混写，但一个衡量工作总量，一个衡量完成工作的速率。GPU datasheet 给出的峰值速度通常还要结合 dtype、稀疏性、kernel 形状和实际利用率解释。</p>
+<p>对于 batch 中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="B"><mrow><mi>B</mi></mrow></math></span> 个样本、输入和输出维度均为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 的线性层，矩阵乘法大约需要</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="2BD^2"><mrow><mn>2</mn><mi>B</mi><msup><mi>D</mi><mn>2</mn></msup></mrow></math></figure>
+<p>个 FLOPs：每个输出元素需要 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 次乘法和约 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 次加法。若一个模型包含 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="L"><mrow><mi>L</mi></mrow></math></span> 个相似线性层，参数量约为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="P=LD^2"><mrow><mi>P</mi><mo>=</mo><mi>L</mi><msup><mi>D</mi><mn>2</mn></msup></mrow></math></span>，那么一次前向的量级为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="2BP"><mrow><mn>2</mn><mi>B</mi><mi>P</mi></mrow></math></span>。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-018-为什么训练近似为-span-class-course-math-inline-math-xmlns-http-www-w3-org-1998"><h4>为什么训练近似为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="6BP"><mrow><mn>6</mn><mi>B</mi><mi>P</mi></mrow></math></span></h4>
+<p>反向传播不仅要计算参数梯度，还要把梯度传回输入激活。对于一个线性层，前向、参数梯度和输入梯度分别都可以看作一次相近规模的矩阵乘法：</p>
+<ul class="course-itemize"><li><p>前向传播约 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="2BP"><mrow><mn>2</mn><mi>B</mi><mi>P</mi></mrow></math></span> FLOPs；</p></li><li><p>计算参数梯度约 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="2BP"><mrow><mn>2</mn><mi>B</mi><mi>P</mi></mrow></math></span> FLOPs；</p></li><li><p>计算输入梯度约 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="2BP"><mrow><mn>2</mn><mi>B</mi><mi>P</mi></mrow></math></span> FLOPs。</p></li></ul>
+<p>因此一次训练 step 的主要矩阵乘法约为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="C_{\rm step}\approx 6BP."><mrow><msub><mi>C</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">p</mi></mrow></msub><mo>≈</mo><mn>6</mn><mi>B</mi><mi>P</mi><mo>.</mo></mrow></math></figure>
+<p>对 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 个训练 token 进行训练，则回到前面的 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="6PD"><mrow><mn>6</mn><mi>P</mi><mi>D</mi></mrow></math></span> 估算。真实 Transformer 还包含 attention、归一化、激活函数、通信和优化器更新，但短上下文下这个近似对数量级判断很有用。</p>
+<figure class="course-code-block"><div class="course-code-caption">二层线性网络中的前向与反向结构</div><pre><code class="language-python">h1 = einsum(x,  w1, "batch in, in out -&gt; batch out")
+h2 = einsum(h1, w2, "batch in, in out -&gt; batch out")
+loss = (h2.mean() - 0) ** 2
+loss.backward()</code></pre></figure>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-019-arithmetic-intensity-与-roofline"><h3>Arithmetic Intensity 与 Roofline</h3>
+<section class="course-source-section level-4" id="lecture-02-heading-020-计算和内存带宽是两种不同瓶颈"><h4>计算和内存带宽是两种不同瓶颈</h4>
+<p>即使一个算子的 FLOPs 很少，它也可能很慢，因为每次运行都要从显存读取大量数据。反过来，矩阵乘法可以进行大量复用：同一个输入元素参与多个乘加，计算单元能在数据搬运成本相对固定时完成更多 FLOPs。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_compute-memory-c0e6a8c2.webp" alt="计算吞吐、内存带宽与数据移动之间的资源关系" width="709" height="621" loading="lazy"><figcaption>计算吞吐、内存带宽与数据移动之间的资源关系</figcaption></figure>
+<p>定义算术强度为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="I=\frac{\text{FLOPs}}{\text{从相应内存层级读取和写入的 bytes}}."><mrow><mi>I</mi><mo>=</mo><mfrac><mrow><mtext>FLOPs</mtext></mrow><mrow><mtext>从相应内存层级读取和写入的 bytes</mtext></mrow></mfrac><mo>.</mo></mrow></math></figure>
+<p>高 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="I"><mrow><mi>I</mi></mrow></math></span> 表示每移动一个 byte 能完成更多计算，低 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="I"><mrow><mi>I</mi></mrow></math></span> 表示程序更容易受到带宽限制。这个比值必须结合具体实现和内存层级理解，不能只由数学表达式决定。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-021-典型算子"><h4>典型算子</h4>
+<section class="course-source-section level-6" id="lecture-02-heading-022-section"><h6></h6>
+<p>逐元素算子。</p>
+<p>ReLU、GELU、加法和归一化通常对每个元素读入、计算少量操作、再写出结果。它们的 FLOPs/byte 较低，容易 memory-bound。</p>
+</section>
+<section class="course-source-section level-6" id="lecture-02-heading-023-section"><h6></h6>
+<p>向量点积。</p>
+<p>点积需要读取两个向量并做乘加。向量长度增加时，计算量和读取量都增加，但数据复用有限。</p>
+</section>
+<section class="course-source-section level-6" id="lecture-02-heading-024-section"><h6></h6>
+<p>矩阵乘法。</p>
+<p>矩阵乘法让每个输入元素参与多个输出，算术强度会随矩阵维度增大。只要矩阵足够大，通常更接近 compute-bound；但小矩阵、奇怪的 shape 和低 occupancy 仍然可能无法达到峰值。</p>
+</section>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-025-roofline-模型"><h4>Roofline 模型</h4>
+<p>Roofline 分析把可达到的性能上界写成</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\operatorname{Perf}(I) \le \min\left(P_{\rm peak},\; BW\times I\right),"><mrow><mo>Perf</mo><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo><mo>≤</mo><mo>min</mo><mrow><mo stretchy="true" fence="true" form="prefix">(</mo><msub><mi>P</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">k</mi></mrow></msub><mo>,</mo><mspace width="0.278em" /><mi>B</mi><mi>W</mi><mo>×</mo><mi>I</mi><mo stretchy="true" fence="true" form="postfix">)</mo></mrow><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="P_{\rm peak}"><mrow><msub><mi>P</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">k</mi></mrow></msub></mrow></math></span> 是峰值计算吞吐，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="BW"><mrow><mi>B</mi><mi>W</mi></mrow></math></span> 是内存带宽。两条上界的交点对应 machine balance：算术强度低于交点时，增加强算力不会解决带宽瓶颈；算术强度高于交点后，程序才更可能受计算吞吐限制。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_roofline-improved-1400-5450c162.webp" alt="Roofline 模型中的计算上界、带宽上界与交点" width="1400" height="1167" loading="lazy"><figcaption>Roofline 模型中的计算上界、带宽上界与交点</figcaption></figure>
+<p>实际优化可以从两侧入手：减少需要读写的 bytes、提高缓存和共享内存复用，或者把操作融合起来；也可以改变 kernel 形状、并行度和矩阵 tile，使计算单元保持忙碌。优化前先定位算子属于哪一侧，通常比盲目修改代码更有效。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-026-本章小结"><h4>本章小结</h4>
+<p>算术强度把计算量和数据移动量放到同一比值中。Roofline 模型用峰值计算和带宽共同给出性能上界；矩阵乘法通常偏 compute-bound，逐元素操作通常偏 memory-bound，但实际结论仍取决于 shape、复用和实现。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-027-训练中的梯度-优化器与显存"><h3>训练中的梯度、优化器与显存</h3>
+<section class="course-source-section level-4" id="lecture-02-heading-028-自动微分的最小例子"><h4>自动微分的最小例子</h4>
+<p>考虑一个简单线性预测：</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\hat y=x\cdot w,\qquad \mathcal{L}=\frac12(\hat y-5)^2."><mrow><mover accent="true"><mi>y</mi><mo>^</mo></mover><mo>=</mo><mi>x</mi><mo>·</mo><mi>w</mi><mo>,</mo><mspace width="2em" /><mi>ℒ</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false">(</mo><mover accent="true"><mi>y</mi><mo>^</mo></mover><mo>−</mo><mn>5</mn><msup><mo stretchy="false">)</mo><mn>2</mn></msup><mo>.</mo></mrow></math></figure>
+<p>前向传播计算预测和损失；调用 `<code>loss.backward()</code>` 后，PyTorch 沿计算图应用链式法则，得到每个需要梯度的参数的导数。梯度不是参数本身，它是损失相对于参数的局部变化率，优化器随后使用它更新参数。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-029-深层网络中的反向-flops"><h4>深层网络中的反向 FLOPs</h4>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-02/figures/official_deep-network-3f86912c.webp" alt="深层线性层与激活组成的计算图" width="1637" height="319" loading="lazy"><figcaption>深层线性层与激活组成的计算图</figcaption></figure>
+<p>对第二层 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="h_2=h_1W_2"><mrow><msub><mi>h</mi><mn>2</mn></msub><mo>=</mo><msub><mi>h</mi><mn>1</mn></msub><msub><mi>W</mi><mn>2</mn></msub></mrow></math></span>，反向传播需要计算</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\frac{\partial\mathcal{L}}{\partial h_1} =\frac{\partial\mathcal{L}}{\partial h_2}W_2^T, \qquad \frac{\partial\mathcal{L}}{\partial W_2} =h_1^T\frac{\partial\mathcal{L}}{\partial h_2}."><mrow><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mn>1</mn></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mn>2</mn></msub></mrow></mfrac><msubsup><mi>W</mi><mn>2</mn><mi>T</mi></msubsup><mo>,</mo><mspace width="2em" /><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>W</mi><mn>2</mn></msub></mrow></mfrac><mo>=</mo><msubsup><mi>h</mi><mn>1</mn><mi>T</mi></msubsup><mfrac><mrow><mo>∂</mo><mi>ℒ</mi></mrow><mrow><mo>∂</mo><msub><mi>h</mi><mn>2</mn></msub></mrow></mfrac><mo>.</mo></mrow></math></figure>
+<p>这两个矩阵乘法与前向乘法具有相近规模，因此反向阶段约为前向的两倍，训练总量约为前向的三倍，也就是 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="6BP"><mrow><mn>6</mn><mi>B</mi><mi>P</mi></mrow></math></span> 的来源。激活函数和加法的成本通常比主要矩阵乘法低，但在低算术强度情况下仍可能成为带宽瓶颈。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-030-优化器状态"><h4>优化器状态</h4>
+<p>最简单的 SGD 使用当前梯度更新参数。Momentum 对梯度做指数移动平均，AdaGrad 累积梯度平方，RMSProp 使用梯度平方的指数移动平均，Adam 将 RMSProp 的二阶统计与 momentum 的一阶统计结合起来<sup class="course-footnote-ref" id="course-footnote-ref-02-1"><a href="#courses?lecture=lecture-02&section=course-footnote-02-1">1</a></sup>。</p>
+<p>以 Adam 为例，每个参数通常需要保存参数本身、梯度、一次和二次动量。即使参数用 BF16 保存，优化器状态也常用 FP32，因此显存计算不能只看模型权重的文件大小。AdamW 还会加入 decoupled weight decay；这些状态会在每个更新 step 参与计算或被读取。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-031-训练循环的资源位置"><h4>训练循环的资源位置</h4>
+<p>一个训练循环可以按以下顺序理解：</p>
+<ol class="course-enumerate"><li><p>从数据中取得 batch，并把输入放到目标 device；</p></li><li><p>前向计算 logits 和 loss，同时保存反向所需的激活；</p></li><li><p>清空或累积已有梯度；</p></li><li><p>调用 backward 计算参数梯度；</p></li><li><p>optimizer step 更新参数和 optimizer states；</p></li><li><p>按需更新学习率、记录指标并释放临时对象。</p></li></ol>
+<p>每一步都会产生资源代价。输入和激活影响瞬时显存，参数和 optimizer states 影响常驻显存，前向和反向影响 FLOPs，数据和参数在 GPU 间移动则影响带宽和通信。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-032-用显存换取更大有效-batch"><h3>用显存换取更大有效 batch</h3>
+<section class="course-source-section level-4" id="lecture-02-heading-033-gradient-accumulation"><h4>Gradient accumulation</h4>
+<p>大 batch 往往有助于稳定训练或提高硬件利用率，但激活显存通常随 batch size 增加。Gradient accumulation 把一个大 batch 拆成多个 micro-batch：每个 micro-batch 都做前向和反向，但不立刻更新参数；梯度在多个 micro-batch 之间累积，达到设定次数后才执行一次 optimizer step。</p>
+<p>若每个 micro-batch 大小为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="b"><mrow><mi>b</mi></mrow></math></span>，累积 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="K"><mrow><mi>K</mi></mrow></math></span> 次，则有效 batch size 近似为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="Kb"><mrow><mi>K</mi><mi>b</mi></mrow></math></span>。这种方法减少了单次需要保存的激活量，但会增加完成一次参数更新所需的前向和反向次数，而且参数在累积期间保持不变。实际实现要正确处理梯度清零、loss 的归一化和最后一个不完整 batch。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-034-activation-checkpointing"><h4>Activation checkpointing</h4>
+<p>训练时，反向传播需要中间激活；如果深度为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="L"><mrow><mi>L</mi></mrow></math></span>，激活保存量大致随 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="L"><mrow><mi>L</mi></mrow></math></span> 增长。Activation checkpointing（也称 gradient checkpointing 或 rematerialization）只保存部分层的激活，反向时从最近的 checkpoint 重新计算被丢弃的中间结果。</p>
+<p>这是一种时间换空间的策略：前向阶段少存 activation，反向阶段增加重计算。若每层都保存，显存高而重计算少；若一个 checkpoint 都不保存，显存最低但可能反复从头计算。保存约每 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\sqrt L"><mrow><msqrt><mi>L</mi></msqrt></mrow></math></span> 层一个 checkpoint，可以在激活内存和重计算开销之间取得平衡的数量级。</p>
+<figure class="course-code-block"><div class="course-code-caption">对一个模块启用 activation checkpointing</div><pre><code class="language-python">from torch.utils.checkpoint import checkpoint
+
+for layer in model.layers:
+    x = checkpoint(layer, x)</code></pre></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-02-heading-035-本章小结"><h4>本章小结</h4>
+<p>Gradient accumulation 通过多个 micro-batch 获得更大的有效 batch；activation checkpointing 通过反向时重算减少激活存储。两者都没有改变模型目标，但改变了计算与显存之间的交换关系。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-02-heading-036-总结与延伸"><h3>总结与延伸</h3>
+<p>本讲把训练系统拆成一组可以估算的对象：tensor 的形状和 dtype 决定存储量，矩阵乘法决定主要 FLOPs，反向传播把训练计算提升到约 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="6BP"><mrow><mn>6</mn><mi>B</mi><mi>P</mi></mrow></math></span>，算术强度和 Roofline 模型帮助判断算力还是带宽是瓶颈，优化器和激活决定显存常驻量与峰值量。</p>
+<p>几个实用的检查问题可以贯穿后续实现：</p>
+<ul class="course-itemize"><li><p>这段代码读写了哪些 tensor，每个 tensor 有多少元素和字节？</p></li><li><p>主要矩阵乘法的 FLOPs 是多少，反向传播需要哪些额外乘法？</p></li><li><p>这个算子的数据复用是否足够高，它更可能是 compute-bound 还是 memory-bound？</p></li><li><p>batch size、sequence length、精度和网络深度改变后，哪个资源首先成为瓶颈？</p></li><li><p>能否通过低精度、gradient accumulation、activation checkpointing 或 kernel 融合改变瓶颈？</p></li></ul>
+<p>下一讲进入模型架构，资源核算会继续发挥作用：attention、MLP、归一化、位置编码和不同并行结构的选择，都需要同时解释表达能力与计算成本。</p>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-02-1">Kingma and Ba, 2014. <em>Adam: A Method for Stochastic Optimization</em>. ICLR 2015. <a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener noreferrer">arXiv:1412.6980</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-02&section=course-footnote-ref-02-1" aria-label="返回正文">↩</a></li>
+</ol></section>

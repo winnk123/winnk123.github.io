@@ -1,0 +1,183 @@
+<section class="course-source-section level-3" id="lecture-17-heading-001-本讲定位-从语言模型到多模态模型"><h3>本讲定位：从语言模型到多模态模型</h3>
+<p>本讲原本可以继续讲 reinforcement learning，但Percy Liang认为 CS336 如果完全停留在 text-only language model，会缺掉现代 frontier model 的一个核心维度：多模态。过去几讲的默认对象是文本模型，即给定任意文本输入，输出任意文本。这里的“文本”可以很宽，包括自然语言、代码、诗歌甚至 DNA 序列；但真实世界显然还包含图像、音频、视频、传感器信号和交互环境。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/multimodality-ebde9c50.webp" alt="多模态世界：语言只是现实世界信息的一种形式，模型需要处理图像、音频、视频等非文本模态" width="1536" height="1024" loading="lazy"><figcaption>多模态世界：语言只是现实世界信息的一种形式，模型需要处理图像、音频、视频等非文本模态</figcaption></figure>
+<p>所谓 <strong>omni model</strong>，不是简单给语言模型外接一个图像分类器，而是希望模型能够接受任意模态组合，例如“图像 + 视频 + 文字问题”，并输出任意模态组合，例如文字解释、图像、音频或视频。课程不会完整构建这样的 omni model，而是聚焦其中最基础、也最常见的一步：如何把图像等非文本模态输入 Transformer。</p>
+<aside class="course-source-callout important"><h4>多模态问题的核心形式</h4><p>现代 Transformer 原生处理的是 token 序列。因此，多模态建模首先要回答两个问题：第一，如何把非文本数据转成 Transformer 可消化的 token；第二，如何从模型中生成非文本数据。本讲主要讲第一个问题，即图像理解和视觉信息注入语言模型。</p></aside>
+<section class="course-source-section level-4" id="lecture-17-heading-002-为什么仍然是-transformer"><h4>为什么仍然是 Transformer</h4>
+<p>这门课一直围绕 Transformer 展开。原因不是 Transformer 天然为所有模态设计好，而是经验上它在大规模训练下效果极强。于是多模态路线通常不是抛弃 Transformer，而是把图像、视频、音频等模态压缩或编码成 token。这里的 token 可以是离散 token，也可以是连续 embedding；关键是它们要承载某种语义单位，而不是单个原始像素这样的低级单位。</p>
+<p>文本里我们已经处理过类似问题：BPE tokenizer 把字符串切成 subword token。图像中对应问题更困难：像素不是语义单位，连续空间又有分辨率、位置、局部细节和全局语义的冲突。因此后续所有方法都可以理解为围绕“图像怎样变成合适 token”展开。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-003-本章小结"><h4>本章小结</h4>
+<p>多模态不是把所有数据都塞进同一个接口这么简单。核心挑战是表示：怎样把非文本模态转化为 Transformer 可以处理、同时又不丢掉任务所需信息的 token。理解和生成对表示粒度的要求不同，这也是后续 CLIP、LLaVA、Qwen-VL 与 Chameleon 路线分化的根源。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-17-heading-004-clip-用图文对齐学习图像语义表示"><h3>CLIP：用图文对齐学习图像语义表示</h3>
+<p>本讲从 2021 年的 CLIP 讲起。CLIP 是 modern VLM 的重要基础，全称是 Contrastive Language-Image Pretraining<sup class="course-footnote-ref" id="course-footnote-ref-17-1"><a href="#courses?lecture=lecture-17&section=course-footnote-17-1">1</a></sup>。它出现的背景是：语言模型已经进入 foundation model 时代，而计算机视觉仍长期依赖 ImageNet 这类人工标注数据集和任务专用监督。CLIP 的问题是：能否利用互联网上海量的 image-caption pair，训练一个可迁移的视觉表示？</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/clip-05cce165.webp" alt="CLIP 的问题设定：用互联网上的大规模图像–文本对学习可迁移的视觉语义表示" width="1800" height="660" loading="lazy"><figcaption>CLIP 的问题设定：用互联网上的大规模图像–文本对学习可迁移的视觉语义表示</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-17-heading-005-对比学习目标"><h4>对比学习目标</h4>
+<p>CLIP 的训练 batch 包含 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="N"><mrow><mi>N</mi></mrow></math></span> 个配对样本 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="(I_i, T_i)"><mrow><mo stretchy="false">(</mo><msub><mi>I</mi><mi>i</mi></msub><mo>,</mo><msub><mi>T</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow></math></span>。图像编码器把每张图像映射为向量 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="v_i"><mrow><msub><mi>v</mi><mi>i</mi></msub></mrow></math></span>，文本编码器把每段文本映射为向量 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="u_i"><mrow><msub><mi>u</mi><mi>i</mi></msub></mrow></math></span>。训练目标不是直接从图像生成文字，而是让正确配对的图文向量相似度高，错误配对相似度低。</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\ell_i^{\text{image}} = -\log \frac{\exp(\operatorname{sim}(v_i,u_i)/\tau)}{\sum_{j=1}^{N}\exp(\operatorname{sim}(v_i,u_j)/\tau)}."><mrow><msubsup><mi>ℓ</mi><mi>i</mi><mrow><mtext>image</mtext></mrow></msubsup><mo>=</mo><mo>−</mo><mi>log</mi><mfrac><mrow><mi>exp</mi><mo stretchy="false">(</mo><mo>sim</mo><mo stretchy="false">(</mo><msub><mi>v</mi><mi>i</mi></msub><mo>,</mo><msub><mi>u</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow><mrow><msubsup><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>N</mi></mrow></msubsup><mi>exp</mi><mo stretchy="false">(</mo><mo>sim</mo><mo stretchy="false">(</mo><msub><mi>v</mi><mi>i</mi></msub><mo>,</mo><msub><mi>u</mi><mi>j</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>.</mo></mrow></math></figure>
+<p>其中，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\operatorname{sim}(\cdot,\cdot)"><mrow><mo>sim</mo><mo stretchy="false">(</mo><mo>·</mo><mo>,</mo><mo>·</mo><mo stretchy="false">)</mo></mrow></math></span> 通常是归一化向量点积，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\tau"><mrow><mi>τ</mi></mrow></math></span> 是温度参数。CLIP 同时做 image-to-text 和 text-to-image 两个方向的分类：每张图像要找到自己的文本，每段文本也要找到自己的图像。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/clip-code-72ce8d27.webp" alt="CLIP 的对比学习伪代码：batch 内图像和文本分别编码，再用双向 cross-entropy 做图文配对" width="1020" height="930" loading="lazy"><figcaption>CLIP 的对比学习伪代码：batch 内图像和文本分别编码，再用双向 cross-entropy 做图文配对</figcaption></figure>
+<aside class="course-source-callout knowledge"><h4>为什么不是直接生成 caption</h4><p>CLIP 论文比较过直接从图像预测文本的路线。Percy Liang强调，contrastive ranking 在计算效率上更好：模型不需要逐 token 生成 caption，而是在 batch 内做配对判别。这个目标更适合从海量 noisy web data 中学习高层语义。</p></aside>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-006-数据与预处理"><h4>数据与预处理</h4>
+<p>CLIP 使用大规模图文数据：OpenAI 从约 50 万个 query 出发，每个 query 收集约 2 万个 image-text pair，最终训练在 4 亿图文对上。原始数据没有公开，后续 OpenCLIP 使用 LAION-5B 等开放数据复现了类似思想<sup class="course-footnote-ref" id="course-footnote-ref-17-2"><a href="#courses?lecture=lecture-17&section=course-footnote-17-2">2</a></sup>。</p>
+<p>图像预处理有一个会影响后续 VLM 的关键细节：CLIP 把任意分辨率图像 resize 到短边为目标尺寸，再 center crop 成固定方形输入。这对分类任务方便，但会切掉边缘信息，也会压缩 OCR、图表和小字细节。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-007-编码器设计与-zero-shot-能力"><h4>编码器设计与 zero-shot 能力</h4>
+<p>CLIP 试验过 ResNet 和 Vision Transformer，后者在大规模训练下表现更好<sup class="course-footnote-ref" id="course-footnote-ref-17-3"><a href="#courses?lecture=lecture-17&section=course-footnote-17-3">3</a></sup>。课程中特别强调 Vision Transformer 的 patch 思想：图像被切成 patch，再像 token 一样送入 Transformer。CLIP 最强模型常被简称为 ViT-L/14@336px，其中 L 表示 large，14 表示 patch size，336 表示训练分辨率。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/vit-fe9473c1.webp" alt="Vision Transformer：把图像切成 patch token，并用 Transformer 编码全局视觉表示" width="1558" height="895" loading="lazy"><figcaption>Vision Transformer：把图像切成 patch token，并用 Transformer 编码全局视觉表示</figcaption></figure>
+<p>ViT 把二维图像拉平成 patch token 序列后，就可以复用 Transformer 的自注意力机制。这里有一个容易被低估的细节：CLIP 的 ViT 并不是为了像素级重建而训练，而是为了让整张图像的表示能和文本说明对齐。因此，它倾向于把 patch 之间的关系整合成面向分类和检索的全局语义表示。对后续 VLM 来说，这意味着 CLIP/SigLIP encoder 是很强的“语义前端”，但不是天然的 OCR 或精确定位前端。</p>
+<p>CLIP 的 headline result 是 zero-shot ImageNet：不对 ImageNet 标签训练分类器，而是把类别名写成文本 prompt，让图像向量和文本向量匹配。CLIP 在 ImageNet 上超过了使用 120 万张 ImageNet 标注图训练的 ResNet-50。这说明 noisy text supervision 可以学到非常强的视觉语义空间。</p>
+<p>zero-shot 的实质是把分类器权重也“文本化”。传统 ImageNet 分类器为每个类别学习一个向量；CLIP 则把 “a photo of a dog”、“a photo of a car” 等 prompt 输入文本编码器，把得到的文本向量当作类别原型。这样模型没有在 ImageNet 标签上训练过，也能把图像投到同一个语义空间中比较。这个技巧后来被大量用于开放词表检测、图像检索和数据过滤。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/clip-efficiency-71ba52bf.webp" alt="CLIP 式 ranking objective 相比直接 caption prediction 更具计算效率" width="1225" height="809" loading="lazy"><figcaption>CLIP 式 ranking objective 相比直接 caption prediction 更具计算效率</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-008-clip-的局限"><h4>CLIP 的局限</h4>
+<p>CLIP 的表示偏向高层语义，而不是细粒度保真。对分类、检索、粗粒度理解很有效，但对 OCR、小字号图表、UI 坐标和精确视觉定位不一定够。更重要的是，CLIP 输出一个或一组连续向量，它本身不能让语言模型生成图像。</p>
+<p>从训练目标看，CLIP 只需要在 batch 内区分“哪段文本和这张图最匹配”。如果一张图的边缘有小字、表格或坐标轴，只要这些信息不影响 caption-level 匹配，训练信号就不会强迫模型保留它们。这解释了为什么后续 VLM 会反复回到高分辨率、动态分辨率、patch 拼接和视觉 token 数量控制这些工程问题：不是 Transformer 不会看图，而是原始视觉 token 的信息预算不够。</p>
+<aside class="course-source-callout warning"><h4>CLIP 不是“万能图像 tokenizer”</h4><p>CLIP 的成功来自图文语义对齐，但它的训练目标决定了它更关心“这张图大概是什么”，而不是“每个小字、坐标、像素细节是什么”。后续 VLM 必须补上高分辨率、动态分辨率和多图/视频处理能力。</p></aside>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-009-本章小结"><h4>本章小结</h4>
+<p>CLIP 给多模态模型提供了一个基础答案：图像可以被编码成和文本语义对齐的连续向量。它打开了 zero-shot vision 和 VLM 的大门，但也留下了分辨率、细节和生成能力方面的缺口。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-17-heading-010-siglip-把-batch-softmax-改成二分类"><h3>SigLIP：把 batch softmax 改成二分类</h3>
+<p>SigLIP 是 CLIP 思想的一个重要简化和工程改进，全称是 Sigmoid Loss for Language Image Pre-Training<sup class="course-footnote-ref" id="course-footnote-ref-17-4"><a href="#courses?lecture=lecture-17&section=course-footnote-17-4">4</a></sup>。它保留图文对齐目标，但不用 CLIP 的 multiclass softmax；相反，每个 image-text pair 被当作二分类样本：这对图文是否匹配？</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/siglip-code-5da306a7.webp" alt="SigLIP 用 sigmoid binary loss 替代 CLIP 的 batch softmax loss" width="1519" height="764" loading="lazy"><figcaption>SigLIP 用 sigmoid binary loss 替代 CLIP 的 batch softmax loss</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-17-heading-011-为什么这个改变重要"><h4>为什么这个改变重要</h4>
+<p>CLIP 的 softmax loss 把 batch 中所有样本耦合在一起：batch 越大，负样本越多，损失定义也随 batch 变化。这要求跨设备收集相似度矩阵，通信和实现都较重。SigLIP 用 sigmoid loss 后，每个 pair 的正负判别更局部，batch size 和 loss 的耦合被弱化。</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="\ell_{ij} = - y_{ij}\log \sigma(s_{ij}) - (1-y_{ij})\log(1-\sigma(s_{ij})),"><mrow><msub><mi>ℓ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mo>−</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mi>log</mi><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false">)</mo><mo>−</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false">)</mo><mi>log</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>σ</mi><mo stretchy="false">(</mo><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>,</mo></mrow></math></figure>
+<p>其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="s_{ij}"><mrow><msub><mi>s</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow></math></span> 是图像 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="i"><mrow><mi>i</mi></mrow></math></span> 与文本 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="j"><mrow><mi>j</mi></mrow></math></span> 的相似度，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="y_{ij}=1"><mrow><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>1</mn></mrow></math></span> 表示匹配，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="y_{ij}=0"><mrow><msub><mi>y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow></math></span> 表示不匹配。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/siglip-parallelism-5fc63180.webp" alt="SigLIP 的 pairwise loss 更容易并行化，弱化了损失函数对超大 batch 的依赖" width="1800" height="587" loading="lazy"><figcaption>SigLIP 的 pairwise loss 更容易并行化，弱化了损失函数对超大 batch 的依赖</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-012-数据与效率"><h4>数据与效率</h4>
+<p>SigLIP 使用 WebLI 级别的大规模图文数据，包含十亿量级 pair，并且支持多语言，还会用自动 OCR 从图像中抽取文本信号。Percy Liang强调，SigLIP 在更少设备和更短训练时间下可以达到很强效果：相比 CLIP 的大 batch softmax，SigLIP 在小于 16K 的 batch size 时尤其有优势，扩大到 1M batch 后收益有限，32K 已经足够。</p>
+<p>从工程角度看，SigLIP 的意义不只是“换了一个 loss”。CLIP 的全 batch softmax 倾向于鼓励超大 batch，因为每个样本都从同一个 batch 中获得负例；但超大 batch 又要求设备之间同步完整相似度矩阵。SigLIP 把任务改写为 pairwise binary classification 后，负例仍然可以来自 batch 内或采样策略，但损失函数本身不再要求每个样本都参与同一个全局 softmax。这个差异使它更适合多机并行训练，也解释了为什么很多后续 VLM 会采用 SigLIP/SigLIP-2 一类视觉编码器。</p>
+<aside class="course-source-callout important"><h4>CLIP 与 SigLIP 的关系</h4><p>二者都学习图文共享语义空间。CLIP 的形式像 batch 内 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="N"><mrow><mi>N</mi></mrow></math></span> 类分类，强调正确配对在所有候选文本/图像中排第一；SigLIP 的形式像匹配二分类，强调每一对图文是否对应。前者概念直观，后者在训练通信、batch size 依赖和扩展性上更友好。</p></aside>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-013-本章小结"><h4>本章小结</h4>
+<p>SigLIP 没有推翻 CLIP 的思路，而是改进了训练目标和工程可扩展性。它后来成为许多 VLM 的视觉编码器选择，因为它提供了强语义表示，同时训练和并行化更方便。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-17-heading-014-llava-把视觉编码接入语言模型"><h3>LLaVA：把视觉编码接入语言模型</h3>
+<p>有了 CLIP/SigLIP，我们获得了图像语义向量；下一步是把这些向量注入语言模型，让 LM 能围绕图像回答问题。LLaVA 是这个方向的经典开源模型：Large Language and Vision Assistant<sup class="course-footnote-ref" id="course-footnote-ref-17-5"><a href="#courses?lecture=lecture-17&section=course-footnote-17-5">5</a></sup>。</p>
+<section class="course-source-section level-4" id="lecture-17-heading-015-合成指令数据"><h4>合成指令数据</h4>
+<p>LLaVA 的数据构造体现了 VLM 的常见范式：使用已有视觉数据集如 MS COCO，其中图像带有 captions 和 object annotations；再用 GPT-4 根据 caption 和 object 信息生成对话、问题和指令回答，最终把合成文本和原图配对，形成多模态 instruction data。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-gen-8f1c4e9e.webp" alt="LLaVA 用 GPT-4 根据 COCO caption 和 object annotation 合成多模态指令数据" width="1710" height="1070" loading="lazy"><figcaption>LLaVA 用 GPT-4 根据 COCO caption 和 object annotation 合成多模态指令数据</figcaption></figure>
+<p>这不是单纯的视觉预训练，而是把图像理解任务转化为“看图对话”。模型因此学到的是 assistant-style multimodal behavior。这个数据路线也体现了 instruction tuning 时代的一个经验：模型不只需要视觉事实，还需要学会以用户期望的方式组织回答，例如先定位图中对象，再解释异常之处，最后给出自然语言结论。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-016-模型结构-vision-encoder-projector-lm"><h4>模型结构：vision encoder + projector + LM</h4>
+<p>LLaVA 的结构非常直接：CLIP ViT-L/14 编码图像，得到视觉 token 或 embedding；一个线性投影矩阵 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="W"><mrow><mi>W</mi></mrow></math></span> 把视觉 embedding 映射到语言模型 embedding 空间；语言模型读取这些视觉 token 和文本 prompt，然后生成回答。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-architecture-26afca5c.webp" alt="LLaVA 架构：CLIP 视觉编码器、线性 projector 与 Vicuna/LLaMA 系语言模型连接" width="1722" height="585" loading="lazy"><figcaption>LLaVA 架构：CLIP 视觉编码器、线性 projector 与 Vicuna/LLaMA 系语言模型连接</figcaption></figure>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="H_v = W \cdot \operatorname{CLIP}(I)."><mrow><msub><mi>H</mi><mi>v</mi></msub><mo>=</mo><mi>W</mi><mo>·</mo><mo>CLIP</mo><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<p>这里 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="I"><mrow><mi>I</mi></mrow></math></span> 是输入图像，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\operatorname{CLIP}(I)"><mrow><mo>CLIP</mo><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo></mrow></math></span> 是视觉编码器输出，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="H_v"><mrow><msub><mi>H</mi><mi>v</mi></msub></mrow></math></span> 是注入 LM 的视觉表示。</p>
+<p>训练分两阶段。第一阶段冻结 vision encoder 和 language model，只训练 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="W"><mrow><mi>W</mi></mrow></math></span>，目标是把图像表示对齐到 LM embedding 空间。第二阶段仍冻结 vision encoder，但训练 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="W"><mrow><mi>W</mi></mrow></math></span> 和 language model，让模型学会根据图像和指令生成回答。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-example-4a7d5583.webp" alt="LLaVA 论文示例：模型能够围绕图像中的异常现象生成开放式解释" width="1383" height="1378" loading="lazy"><figcaption>LLaVA 论文示例：模型能够围绕图像中的异常现象生成开放式解释</figcaption></figure>
+<p>LLaVA 的简洁性很重要：它证明了只要视觉编码器足够强、语言模型足够强，中间用一个很薄的投影层就能得到可用的视觉聊天模型。但这个结论也有边界。投影层只能把已有视觉特征翻译到 LM 空间，不能凭空恢复视觉编码器丢失的细节；因此 LLaVA 后续版本的主要工作并不是把投影层无限复杂化，而是改善数据、分辨率和多图/视频输入格式。</p>
+<aside class="course-source-callout important"><h4>标准 VLM 模板</h4><p>许多后续模型都继承了 LLaVA 的基本模板：视觉编码器负责把图像变成连续 token，projector 或 adapter 负责跨空间对齐，语言模型负责推理和生成文本。差异主要在视觉编码器、分辨率处理、adapter 深度、训练数据和训练阶段设计。</p></aside>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-017-llava-onevision-多图-视频与高分辨率"><h4>LLaVA-OneVision：多图、视频与高分辨率</h4>
+<p>LLaVA-OneVision 是 LLaVA 系列后续版本，目标更广：不仅处理单张图片，还处理多张图片和视频<sup class="course-footnote-ref" id="course-footnote-ref-17-6"><a href="#courses?lecture=lecture-17&section=course-footnote-17-6">6</a></sup>。它仍然沿用 vision encoder + projector + LM 的范式，但在分辨率和模态混合上做了更多工程。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-d9029d4c.webp" alt="LLaVA-OneVision 的整体目标：统一处理单图、多图和视频输入" width="1383" height="628" loading="lazy"><figcaption>LLaVA-OneVision 的整体目标：统一处理单图、多图和视频输入</figcaption></figure>
+<p>核心动机是保留细节。CLIP 固定 resize/crop 会损失 OCR 和图表细节，因此 LLaVA 系列引入 AnyRes：把高分辨率图像切成多个与视觉编码器分辨率匹配的块，分别编码后拼接；如果 token 太多，则用插值或降采样控制长度。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-anyres-3a1a40cb.webp" alt="AnyRes：把高分辨率图像切成多个视觉编码器可处理的块，再拼接为视觉 token 序列" width="1800" height="555" loading="lazy"><figcaption>AnyRes：把高分辨率图像切成多个视觉编码器可处理的块，再拼接为视觉 token 序列</figcaption></figure>
+<p>AnyRes 的思想和文本序列有一个类比：句子可以有不同长度，Transformer 本来就能处理变长序列；图像也可以有不同分辨率，只要把不同数量的视觉 token 放进上下文即可。困难在于视觉 token 增长太快，一张高分辨率图或一个视频就可能占满上下文窗口，所以系统必须同时做信息保留和 token budget 控制。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-modalities-1f21be69.webp" alt="LLaVA-OneVision 对单图、多图和视频使用不同分辨率策略，控制视觉 token 长度" width="1800" height="675" loading="lazy"><figcaption>LLaVA-OneVision 对单图、多图和视频使用不同分辨率策略，控制视觉 token 长度</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-018-数据哲学-质量优先与跨模态迁移"><h4>数据哲学：质量优先与跨模态迁移</h4>
+<p>LLaVA-OneVision 强调 quality over quantity。它收集大量任务型高质量数据，包括图表、OCR、视觉问答、视频理解和 GUI 等。Percy Liang特别强调 transfer between modalities：例如只在单图数据上训练图表和 OCR 能力，模型可泛化到多图；视觉 prompt 中的圈选或标记，也能泛化到视频帧。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-data-1-a9955e49.webp" alt="LLaVA-OneVision 的数据构成强调任务覆盖和数据质量，而不是单纯堆叠样本数量" width="1800" height="756" loading="lazy"><figcaption>LLaVA-OneVision 的数据构成强调任务覆盖和数据质量，而不是单纯堆叠样本数量</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-data-2-33115484.webp" alt="LLaVA-OneVision 进一步细分不同视觉任务数据，使训练覆盖图表、OCR、视频和 GUI 等场景" width="1800" height="692" loading="lazy"><figcaption>LLaVA-OneVision 进一步细分不同视觉任务数据，使训练覆盖图表、OCR、视频和 GUI 等场景</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-training-83c0852c.webp" alt="LLaVA-OneVision 的训练流程：从 projector 对齐逐步过渡到高质量知识和下游任务数据" width="1800" height="910" loading="lazy"><figcaption>LLaVA-OneVision 的训练流程：从 projector 对齐逐步过渡到高质量知识和下游任务数据</figcaption></figure>
+<p>训练 recipe 的“从易到难”在这里很实际。第一步只要求视觉 token 能落到语言模型可解释的空间；后面再逐步训练知识密集、任务密集和更接近真实下游交互的数据。如果一开始就混入所有模态、所有分辨率和所有任务，优化问题会更杂，模型也更容易把资源花在格式适配而不是视觉语义上。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-transfer-s1-7651510d.webp" alt="LLaVA-OneVision 的跨模态迁移示例：单图图表能力可以迁移到多图设置" width="1800" height="904" loading="lazy"><figcaption>LLaVA-OneVision 的跨模态迁移示例：单图图表能力可以迁移到多图设置</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-transfer-s2-6cd24c30.webp" alt="OCR 与多图关系推理可迁移到 GUI agent 场景" width="1485" height="1357" loading="lazy"><figcaption>OCR 与多图关系推理可迁移到 GUI agent 场景</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/llava-onevision-transfer-s8-7469fa6a.webp" alt="视觉提示能力从单图迁移到视频帧理解" width="1038" height="1496" loading="lazy"><figcaption>视觉提示能力从单图迁移到视频帧理解</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-019-本章小结"><h4>本章小结</h4>
+<p>LLaVA 系列把 CLIP/SigLIP 视觉表示接入 LM，形成现代开源 VLM 的基本模板。它的进步主要不是“换一个神奇架构”，而是围绕分辨率、数据质量、多模态 token 长度和训练阶段做大量系统工程。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-17-heading-020-qwen-vl-系列-动态分辨率-位置编码与深层融合"><h3>Qwen-VL 系列：动态分辨率、位置编码与深层融合</h3>
+<p>Qwen-VL 系列展示了 VLM 从简单 adapter 走向更系统的视觉-语言融合<sup class="course-footnote-ref" id="course-footnote-ref-17-7"><a href="#courses?lecture=lecture-17&section=course-footnote-17-7">7</a></sup>。它仍然保留视觉编码器 + 语言模型的总体框架，但在 adapter、动态分辨率、视频处理、位置编码和训练流程上逐步增强。</p>
+<section class="course-source-section level-4" id="lecture-17-heading-021-qwen-vl-三阶段训练"><h4>Qwen-VL：三阶段训练</h4>
+<p>Qwen-VL 使用 OpenCLIP 风格的 ViT 视觉编码器，通过一层 cross-attention adapter 把视觉特征映射到固定长度表示，并引入特殊 token，如 <code>&lt;img&gt;</code>、<code>&lt;box&gt;</code>、<code>&lt;ref&gt;</code>。这些特殊 token 的作用是把视觉区域、引用对象和输出框坐标显式放进语言序列，使模型不只会“描述图片”，还可以在文本输出里表达定位结果。</p>
+<p>训练分三阶段：第一阶段使用大规模低质量数据，冻结 LM，训练 vision encoder 和 adapter；第二阶段使用更高质量任务数据并提高分辨率，训练所有参数；第三阶段进行 instruction tuning，冻结视觉编码器，训练 adapter 和 LM。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen-vl-stages-10dd31d6.webp" alt="Qwen-VL 三阶段训练：视觉对齐、高质量多模态训练、instruction tuning" width="1800" height="712" loading="lazy"><figcaption>Qwen-VL 三阶段训练：视觉对齐、高质量多模态训练、instruction tuning</figcaption></figure>
+<p>Qwen-VL 相比 LLaVA 的一个变化是更认真地把“视觉 grounding”纳入输出协议。模型可以输出 bounding box 或引用区域，说明 VLM 不只是分类器加聊天机器人，而是逐渐接近视觉 agent 的接口：它需要知道对象在哪里、用户指的是什么、下一步操作对象是哪一个。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen-vl-stage1-ea40f9c7.webp" alt="Qwen-VL 第一阶段：冻结语言模型，训练视觉编码器和 adapter 做粗粒度对齐" width="1126" height="666" loading="lazy"><figcaption>Qwen-VL 第一阶段：冻结语言模型，训练视觉编码器和 adapter 做粗粒度对齐</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen-vl-stage2-28125fc5.webp" alt="Qwen-VL 第二阶段：提高分辨率并使用更高质量任务数据训练全模型" width="1800" height="574" loading="lazy"><figcaption>Qwen-VL 第二阶段：提高分辨率并使用更高质量任务数据训练全模型</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen-vl-examples-6038b237.webp" alt="Qwen-VL 示例能力：视觉问答、OCR、目标定位和多图比较都转成统一文本接口" width="1800" height="1132" loading="lazy"><figcaption>Qwen-VL 示例能力：视觉问答、OCR、目标定位和多图比较都转成统一文本接口</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-022-qwen2-vl-动态分辨率与-mrope"><h4>Qwen2-VL：动态分辨率与 MRoPE</h4>
+<p>Qwen2-VL 的关键升级是 dynamic resolution<sup class="course-footnote-ref" id="course-footnote-ref-17-8"><a href="#courses?lecture=lecture-17&section=course-footnote-17-8">8</a></sup>。不同图像不再被强行压到同一固定尺寸，而是按原始分辨率和任务需求产生不同数量的视觉 token。对视频，模型按时间采样帧，并设置最大 token 数，控制上下文长度。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen2-vl-architecture-b2c6e0e7.webp" alt="Qwen2-VL 架构与动态分辨率：不同尺寸图像产生不同数量的视觉 token" width="1800" height="1136" loading="lazy"><figcaption>Qwen2-VL 架构与动态分辨率：不同尺寸图像产生不同数量的视觉 token</figcaption></figure>
+<p>Qwen2-VL 还引入 Multimodal Rotary Position Embedding，即 MRoPE。文本只有一维位置，而图像和视频天然有二维/三维位置：高度、宽度、时间。MRoPE 的目标是让位置编码显式表达这些轴，而不是把视觉 token 当作普通一维序列处理。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen2-vl-mrope-0a974934.webp" alt="Qwen2-VL 的 MRoPE：把文本、图像和视频的位置结构统一编码" width="1800" height="440" loading="lazy"><figcaption>Qwen2-VL 的 MRoPE：把文本、图像和视频的位置结构统一编码</figcaption></figure>
+<p>动态分辨率和 MRoPE 是互相配合的。前者决定“给这张图多少视觉 token”，后者决定“这些 token 在空间和时间中处于什么位置”。如果只做动态分辨率而没有合适的位置编码，模型会看到更多 token，却未必知道它们的二维/三维关系；如果只做位置编码而仍把所有图像压成固定小图，又会丢掉本该定位的细节。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen2-vl-capabilities-efe2826c.webp" alt="Qwen2-VL 展示的能力覆盖图像、视频、OCR、文档理解和跨语言视觉问答" width="1800" height="1004" loading="lazy"><figcaption>Qwen2-VL 展示的能力覆盖图像、视频、OCR、文档理解和跨语言视觉问答</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-023-qwen3-vl-长上下文-多阶段训练与-deepstack"><h4>Qwen3-VL：长上下文、多阶段训练与 DeepStack</h4>
+<p>Qwen3-VL 延续 Qwen2-VL 的思路，并把模型规模、上下文长度和训练 recipe 推得更远<sup class="course-footnote-ref" id="course-footnote-ref-17-9"><a href="#courses?lecture=lecture-17&section=course-footnote-17-9">9</a></sup>。语言模型侧使用 Qwen3 dense/MoE 系列，支持长上下文；视觉编码器采用 SigLIP-2 思路，并使用 interleaved MRoPE，把时间、宽度和高度轴分布到不同频段。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen3-vl-2524c49e.webp" alt="Qwen3-VL 总体结构：长上下文语言模型、SigLIP-2 风格视觉编码器与更深层视觉语言融合" width="1800" height="1042" loading="lazy"><figcaption>Qwen3-VL 总体结构：长上下文语言模型、SigLIP-2 风格视觉编码器与更深层视觉语言融合</figcaption></figure>
+<p>Percy Liang指出，Qwen2-VL 中按轴分块的 MRoPE 虽然直观，但可能不是最优：如果某个频段只对应单一轴，模型对跨轴关系的表达会受到结构限制。Qwen3-VL 的 interleaving 让不同频率段同时接触时间、宽度和高度信息，试图让位置编码更均衡地覆盖多维结构。</p>
+<p>显式时间戳 token 是一个很实用的设计。视频帧本来已经有时间位置，但如果时间只藏在 positional embedding 中，语言模型不容易在回答里直接引用它；把 “0 seconds”、“2 seconds” 这类时间作为 token 放进序列后，模型可以在自然语言中更自然地对齐事件和时间。</p>
+<p>另一个重要细节是 loss balance。视频和图像会产生大量 multimodal token，如果按 token 数直接加权，它们可能淹没文本数据。Qwen3-VL 使用 square-root-normalized per-token loss，让长视觉输入不因 token 数多而过度主导训练。</p>
+<p>Qwen3-VL 还使用 DeepStack：不是只把视觉编码器当作黑盒输出一串 token，而是将跨层视觉特征注入语言模型多个层级的 residual stream。这属于更深层的 vision-language fusion。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen3-vl-pretraining-471a54af.webp" alt="Qwen3-VL 预训练阶段：从 adapter 训练逐步扩展到 8K、32K、256K 上下文长度" width="1800" height="322" loading="lazy"><figcaption>Qwen3-VL 预训练阶段：从 adapter 训练逐步扩展到 8K、32K、256K 上下文长度</figcaption></figure>
+<p>从 Qwen3-VL 可以看出，现代 VLM 的 recipe 已经不再是单一技巧，而是一组互相牵制的系统设计：视觉编码器要强，位置编码要适合图像和视频，adapter 要能深层融合，数据混合要稳定，训练阶段还要按上下文长度逐步推进。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/qwen3-vl-results-7d2b0b34.webp" alt="Qwen3-VL 的 benchmark 结果：开源 VLM 通过复杂训练 recipe 和长上下文逐步逼近闭源模型" width="1003" height="1479" loading="lazy"><figcaption>Qwen3-VL 的 benchmark 结果：开源 VLM 通过复杂训练 recipe 和长上下文逐步逼近闭源模型</figcaption></figure>
+<aside class="course-source-callout knowledge"><h4>Qwen-VL 系列的主线</h4><p>从 Qwen-VL 到 Qwen3-VL，核心框架并未完全改变：视觉编码器仍把图像变成连续表示，语言模型仍负责推理和文本生成。但每一代都在补现实世界输入的缺口：高分辨率、视频时间轴、多图关系、长上下文、loss balance 和更深层融合。</p></aside>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-024-本章小结"><h4>本章小结</h4>
+<p>Qwen-VL 系列说明，强 VLM 的难点往往在“如何把视觉 token 做得合适”：数量不能爆炸，细节不能丢，位置不能混乱，训练不能被某种模态压垮。架构改进和数据工程必须一起出现。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-17-heading-025-chameleon-把所有模态统一成离散-token"><h3>Chameleon：把所有模态统一成离散 token</h3>
+<p>前面的 VLM 基本是“视觉编码器 + 语言模型”：图像被编码为连续向量，再注入 LM。这类模型擅长看图回答，但天然只能让 LM 生成文本。如果要生成图像，通常还要接 diffusion model 或其他生成模块。Chameleon 提出另一条更统一的路线：把图像也离散化成 token，然后用一个 autoregressive model 同时建模文本 token 和图像 token<sup class="course-footnote-ref" id="course-footnote-ref-17-10"><a href="#courses?lecture=lecture-17&section=course-footnote-17-10">10</a></sup>。</p>
+<section class="course-source-section level-4" id="lecture-17-heading-026-统一-token-空间与-interleaved-generation"><h4>统一 token 空间与 interleaved generation</h4>
+<p>Chameleon 的吸引力在于形式统一。文本和图像都变成离散 token 后，训练目标就是普通 autoregressive language modeling。样本可以是文本、图像、图文交错内容。模型既能读图文，也能生成图文交错结果。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/chameleon-example-6aa26a21.webp" alt="Chameleon 示例：一个自回归序列中可以交错出现文本片段和生成图像片段" width="1110" height="995" loading="lazy"><figcaption>Chameleon 示例：一个自回归序列中可以交错出现文本片段和生成图像片段</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/chameleon-372a6a32.webp" alt="Chameleon：把文本和图像都表示为离散 token，用同一个自回归模型做 mixed-modal 建模" width="963" height="541" loading="lazy"><figcaption>Chameleon：把文本和图像都表示为离散 token，用同一个自回归模型做 mixed-modal 建模</figcaption></figure>
+<p>这种路线与 LLaVA/Qwen-VL 的最大差别在输出端。LLaVA 类模型把图像压成连续视觉 token 后交给语言模型，因此语言模型天然输出文本；Chameleon 则把图像也变成离散 token，使“下一个 token”既可能是文字，也可能是图像 code。形式上它最接近真正的 early-fusion omni model。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-027-vq-vae-图像如何离散化"><h4>VQ-VAE：图像如何离散化</h4>
+<p>图像离散化常用 VQ-VAE<sup class="course-footnote-ref" id="course-footnote-ref-17-11"><a href="#courses?lecture=lecture-17&section=course-footnote-17-11">11</a></sup>。编码器先把图像 patch 映射到连续向量，然后从一个 codebook 中选择最近的离散 code；解码器再尝试从这些 code 重建图像。训练目标是重建损失加上一些处理不可导量化步骤的辅助项。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-17/figures/vq-vae-213ff231.webp" alt="VQ-VAE：图像先编码到连续向量，再量化为 codebook 中的离散视觉 token" width="1693" height="929" loading="lazy"><figcaption>VQ-VAE：图像先编码到连续向量，再量化为 codebook 中的离散视觉 token</figcaption></figure>
+<p>例如 Chameleon 可把 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="512\times512"><mrow><mn>512</mn><mo>×</mo><mn>512</mn></mrow></math></span> 图像编码成 1024 个视觉 token，每个 token 来自大小约 8192 的 codebook。这样一来，文本 token 和图像 token 都能出现在同一个自回归序列中。</p>
+<p>这个设计的吸引力在于训练接口统一。LLaVA 类模型需要视觉 encoder、projector、LM 三部分协调；Chameleon 则可以把数据都变成 token 序列，用 next-token prediction 训练。问题是，接口统一并不代表数据统计统一：图像 token 的数量、熵和局部相关性都和自然语言 token 很不一样。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-028-优雅性与稳定性问题"><h4>优雅性与稳定性问题</h4>
+<p>Chameleon 的优雅之处是“就是一个语言模型”：没有额外 adapter，没有把视觉编码器当黑盒注入，也不需要另接 diffusion 才能生成图像。但代价也明显。第一，离散化会损失信息，尤其对 OCR、小字和精细视觉细节不友好。第二，文本 token 和图像 token 的统计性质很不同：文本下一个词通常低熵，图像下一个 code 高熵得多。</p>
+<p>为缓解训练不稳定，Chameleon 使用 QK norm 和 z-loss regularization 等技术控制 norm growth。Percy Liang强调，这条路线形式上很漂亮，但没有成为主流 VLM 的唯一答案，因为离散化信息损失和多模态混合训练都很难。</p>
+<p>还要注意，Chameleon 的图像生成路线在 diffusion model 成熟后相对失去了一些主流地位。Diffusion 在连续像素/潜空间中逐步去噪，更适合高保真图像生成；自回归离散图像 token 则更像把图像当成一段很长、很高熵的句子来生成。二者各有优势，但今天很多 frontier 系统更可能把强 VLM 理解模块和 diffusion-style 生成模块组合起来，而不是完全依赖单一离散 token 语言模型。</p>
+<aside class="course-source-callout warning"><h4>统一表示不等于最优表示</h4><p>把所有模态都变成离散 token 很简洁，但简洁不自动带来最强性能。理解任务可能只需要高层语义，生成和 OCR 却需要细粒度信息。不同任务对编码器的保真度、压缩率和可生成性要求不同。</p></aside>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-029-本章小结"><h4>本章小结</h4>
+<p>Chameleon 展示了 omni model 的一种理想化形式：所有模态都进入统一 token 序列，统一用自回归目标训练。但现实中，连续视觉编码器加语言模型仍然是理解侧的主流，图像生成则常由 diffusion 等模型承担。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-17-heading-030-总结与延伸"><h3>总结与延伸</h3>
+<p>本讲可以压缩成一条主线：<strong>多模态模型的中心问题是 tokenization/encoding</strong>。文本已经有 BPE 等成熟方案；图像、视频和音频则需要在语义、细节、token 数量和训练稳定性之间权衡。</p>
+<aside class="course-source-callout important"><h4>本讲的四个 takeaway</h4><p>第一，CLIP/SigLIP 证明了图文对齐能学到强视觉语义表示。第二，LLaVA/Qwen-VL 说明视觉表示要通过 projector/adapter/DeepStack 接入语言模型，并靠高质量数据和分辨率策略增强。第三，Chameleon 展示统一离散 token 的优雅路线，但也暴露离散化损失与训练稳定性问题。第四，现代 frontier model 可能混合使用连续编码器、Transformer 和 diffusion-style 生成模块，而公开资料通常不会完整披露细节。</p></aside>
+<section class="course-source-section level-4" id="lecture-17-heading-031-理解与生成的非对称性"><h4>理解与生成的非对称性</h4>
+<p>图像理解和图像生成并不要求同一种表示。分类或语义检索只需高层语义，CLIP 向量很合适；OCR 和 UI 操作需要局部细节和位置，必须保留更高分辨率；图像生成需要像素级或潜空间级细节，diffusion 在这里更自然。因此“一个万能 encoder”并不存在，模型设计必须跟目标任务绑定。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-17-heading-032-训练混合数据时的尺度问题"><h4>训练混合数据时的尺度问题</h4>
+<p>视频和图像 token 数量巨大，但信息密度未必高于文本。如果按 token 数简单混合，视觉/视频样本可能在 loss 上占据过高权重。Qwen3-VL 的 square-root-normalized loss、LLaVA-OneVision 的模态 token 长度控制，都是在解决同一个问题：不同模态的数据密度和长度不同，训练时需要重新加权。</p>
+</section>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-17-1">Radford et al., 2021. <em>Learning Transferable Visual Models From Natural Language Supervision</em>. ICML 2021. <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener noreferrer">arXiv:2103.00020</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-2">Ilharco et al., 2022. <em>OpenCLIP</em>. <a href="https://arxiv.org/abs/2212.07143" target="_blank" rel="noopener noreferrer">arXiv:2212.07143</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-2" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-3">Dosovitskiy et al., 2021. <em>An Image Is Worth 16x16 Words: Transformers for Image Recognition at Scale</em>. ICLR 2021. <a href="https://arxiv.org/abs/2010.11929" target="_blank" rel="noopener noreferrer">arXiv:2010.11929</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-3" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-4">Zhai et al., 2023. <em>Sigmoid Loss for Language Image Pre-Training</em>. <a href="https://arxiv.org/abs/2303.15343" target="_blank" rel="noopener noreferrer">arXiv:2303.15343</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-4" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-5">Liu et al., 2023. <em>Visual Instruction Tuning</em>. NeurIPS 2023. <a href="https://arxiv.org/abs/2304.08485" target="_blank" rel="noopener noreferrer">arXiv:2304.08485</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-5" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-6">Li et al., 2024. <em>LLaVA-OneVision: Easy Visual Task Transfer</em>. <a href="https://arxiv.org/abs/2408.03326" target="_blank" rel="noopener noreferrer">arXiv:2408.03326</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-6" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-7">Bai et al., 2023. <em>Qwen-VL: A Versatile Vision-Language Model for Understanding, Localization, Text Reading, and Beyond</em>. <a href="https://arxiv.org/abs/2308.12966" target="_blank" rel="noopener noreferrer">arXiv:2308.12966</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-7" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-8">Wang et al., 2024. <em>Qwen2-VL: Enhancing Vision-Language Model's Perception of the World at Any Resolution</em>. <a href="https://arxiv.org/abs/2409.12191" target="_blank" rel="noopener noreferrer">arXiv:2409.12191</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-8" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-9">Bai et al., 2025. <em>Qwen3-VL Technical Report</em>. <a href="https://arxiv.org/abs/2511.21631" target="_blank" rel="noopener noreferrer">arXiv:2511.21631</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-9" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-10">Team Chameleon, 2024. <em>Chameleon: Mixed-Modal Early-Fusion Foundation Models</em>. <a href="https://arxiv.org/abs/2405.09818" target="_blank" rel="noopener noreferrer">arXiv:2405.09818</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-10" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-17-11">Van den Oord et al., 2017. <em>Neural Discrete Representation Learning</em>. NeurIPS 2017. <a href="https://arxiv.org/abs/1711.00937" target="_blank" rel="noopener noreferrer">arXiv:1711.00937</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-17&section=course-footnote-ref-17-11" aria-label="返回正文">↩</a></li>
+</ol></section>

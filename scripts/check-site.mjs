@@ -16,6 +16,7 @@ const diagrams = json('content/diagrams.json');
 const resources = json('dist/resources.json');
 const courses = json('content/courses.json').courses;
 const courseArticles = json('content/course-articles.json');
+const courseMigration = json('dist/course-articles/cs336/index.json');
 
 function ids(items, label) {
   assert.ok(Array.isArray(items) && items.length, `${label}: expected entries`);
@@ -33,22 +34,36 @@ let assetReferences = 0;
 ids(courses, 'courses');
 let lectureCount = 0;
 assert.equal(courseArticles.courseId, courses[0]?.id, 'course articles must match course metadata');
-const articlesById = new Map(courseArticles.lectures.map(article => [article.lectureId, article]));
-assert.equal(articlesById.size, courseArticles.lectures.length, 'duplicate course article id');
+assert.equal(courseMigration.courseId, courses[0]?.id, 'migration must match course metadata');
+const summariesById = new Map(courseArticles.lectures.map(article => [article.lectureId, article]));
+const migratedById = new Map(courseMigration.lectures.map(article => [article.lectureId, article]));
+assert.equal(summariesById.size, courseArticles.lectures.length, 'duplicate course summary id');
+assert.equal(migratedById.size, courseMigration.lectures.length, 'duplicate migrated article id');
+const articlesById = new Map();
 for (const course of courses) {
   assert.ok(course.title && course.subtitle && Array.isArray(course.lectures), `${course.id}: incomplete course`);
   ids(course.lectures, `${course.id} lectures`);
+  assert.equal(course.lectures.length, courseMigration.lectures.length, 'every lecture needs a migrated article');
   for (const lecture of course.lectures) {
     assert.ok(Number.isInteger(lecture.number) && lecture.number > 0, `${lecture.id}: invalid lecture number`);
     assert.ok(lecture.title && lecture.summary && lecture.instructor, `${lecture.id}: missing lecture metadata`);
     assert.match(lecture.date, /^\d{4}-\d{2}-\d{2}$/, `${lecture.id}: invalid date`);
-    const article = articlesById.get(lecture.id);
-    assert.ok(article?.lead && article.takeaway && article.sections?.length >= 3, `${lecture.id}: incomplete native article`);
-    for (const section of article.sections) {
-      assert.ok(section.title && section.paragraphs?.length, `${lecture.id}: empty article section`);
-      if (section.equation) assert.ok(section.equation.display && section.equation.label && section.equation.plain, `${lecture.id}/${section.title}: incomplete equation`);
-      if (section.figure) asset(`./assets/courses/${course.id}/${lecture.id}/${section.figure.src.split('/').at(-1)}`, `${lecture.id}/${section.title}`);
-    }
+    const summary = summariesById.get(lecture.id);
+    const migration = migratedById.get(lecture.id);
+    assert.ok(summary?.lead && summary.takeaway && migration?.toc?.length, `${lecture.id}: incomplete native article`);
+    assert.deepEqual(migration.unknownMacros, {}, `${lecture.id}: unsupported source content`);
+    assert.equal(migration.headings, migration.sourceHeadings, `${lecture.id}: missing source headings`);
+    assert.equal(migration.inlineImages, migration.sourceFigureRefs, `${lecture.id}: missing source figures`);
+    assert.equal(migration.codeBlocks || 0, migration.sourceCodeBlocks, `${lecture.id}: missing source code blocks`);
+    asset(migration.file, lecture.id);
+    const fragment = read('dist/' + migration.file.replace(/^\.\//, ''));
+    assert.equal(Buffer.byteLength(fragment), migration.htmlBytes, `${lecture.id}: stale migration index`);
+    assert.ok(!/<(?:script|iframe|object|embed)\b|\son[a-z]+\s*=/i.test(fragment), `${lecture.id}: executable article content`);
+    assert.ok(!/course-unmapped-macro|<ns\d+:math\b/.test(fragment), `${lecture.id}: broken source rendering`);
+    const articleIds = new Set([...fragment.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
+    for (const item of migration.toc) assert.ok(articleIds.has(item.id), `${lecture.id}: missing heading ${item.id}`);
+    for (const match of fragment.matchAll(/\bsrc="([^"]+)"/g)) asset(match[1], lecture.id);
+    articlesById.set(lecture.id, {...summary, ...migration});
     lectureCount++;
   }
 }
@@ -106,4 +121,5 @@ assert.match(html, /<html\b/);
 for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) asset(match[1], 'index.html');
 const scriptFiles = [...html.matchAll(/<script\b[^>]*src=["']\.\/([^"']+)["']/g)].map(m => m[1]);
 for (const file of scriptFiles) new vm.Script(read('dist/' + file), {filename: file});
-console.log(`Checked ${guides.length} guides, ${lectureCount} native course articles, ${equations} formulas, ${assetReferences} asset references and ${scriptFiles.length} scripts.`);
+const courseTopicCount = courseMigration.lectures.reduce((total, article) => total + article.toc.length, 0);
+console.log(`Checked ${guides.length} guides, ${lectureCount} complete native course articles, ${courseTopicCount} source headings, ${equations} guide formulas, ${assetReferences} asset references and ${scriptFiles.length} scripts.`);

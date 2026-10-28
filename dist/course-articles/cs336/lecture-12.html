@@ -1,0 +1,207 @@
+<section class="course-source-section level-3" id="lecture-12-heading-001-评价目标-把抽象能力变成可测指标"><h3>评价目标：把抽象能力变成可测指标</h3>
+<p>模型架构、训练和系统决定了模型怎样被制造，evaluation 则定义我们希望得到什么样的行为。Percy Liang 在本讲先梳理评估目标，再介绍具体 benchmark，最后讨论现实性、数据污染和评估对象。</p>
+<p>“好模型”可以指知识面广、回答可靠、用户喜欢、完成任务快，或在相同成本下更有效。评估的核心工作，是把这些抽象目标转化为问题、环境、打分规则与统计量。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_artificial-analysis-1980bea0.webp" alt="将多项 benchmark 汇总为能力指标的评估方式" width="1740" height="672" loading="lazy"><figcaption>将多项 benchmark 汇总为能力指标的评估方式</figcaption></figure>
+<p>如果实际目标还包含成本，那么能力与价格需要共同考虑。相同分数的模型可能有不同的延迟、吞吐与价格，采购或部署时关注的是符合约束的有效能力。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_artificial-analysis-cost-50e79b7b.webp" alt="能力与成本共同决定的模型选择空间" width="1741" height="687" loading="lazy"><figcaption>能力与成本共同决定的模型选择空间</figcaption></figure>
+<p>人类偏好提供另一种信号：用户看两份回答后，认为哪一个更好。Arena 将这种比较汇总为相对排名，捕捉开放式交互中的体验。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_lmarena-leaderboard-31297d5d.webp" alt="基于用户成对偏好的模型评价" width="834" height="712" loading="lazy"><figcaption>基于用户成对偏好的模型评价</figcaption></figure>
+<p>实际使用量又反映了不同因素：价格、产品入口、习惯和应用需求都会影响用户选择。OpenRouter 的使用分布因此提供生态观察，和能力测试形成互补。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_openrouter-78641f93.webp" alt="通过真实调用分布观察用户选择和模型使用场景" width="1289" height="830" loading="lazy"><figcaption>通过真实调用分布观察用户选择和模型使用场景</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-12-heading-002-本章小结"><h4>本章小结</h4>
+<p>明确评估目的，才能解释一个分数的含义。能力、偏好、经济性与实际使用是相关但各有侧重的观测。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-003-perplexity-从概率分布评价语言模型"><h3>Perplexity：从概率分布评价语言模型</h3>
+<section class="course-source-section level-4" id="lecture-12-heading-004-定义-交叉熵与最优分布"><h4>定义、交叉熵与最优分布</h4>
+<p>语言模型定义 token 序列的分布。对包含 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="T"><mrow><mi>T</mi></mrow></math></span> 个 token 的数据集，平均负对数似然与 perplexity 为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="H_D(p)=-\frac1T\sum_{t=1}^T\log p(x_t\mid x_{&lt;t}),\qquad \operatorname{PPL}_D(p)=\exp(H_D(p))."><mrow><msub><mi>H</mi><mi>D</mi></msub><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><mi>log</mi><mi>p</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>∣</mo><msub><mi>x</mi><mrow><mo>&lt;</mo><mi>t</mi></mrow></msub><mo stretchy="false">)</mo><mo>,</mo><mspace width="2em" /><msub><mo>PPL</mo><mi>D</mi></msub><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo>=</mo><mi>exp</mi><mo stretchy="false">(</mo><msub><mi>H</mi><mi>D</mi></msub><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>.</mo></mrow></math></figure>
+<ul class="course-itemize"><li><p><span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="p"><mrow><mi>p</mi></mrow></math></span> 是模型分布，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="D"><mrow><mi>D</mi></mrow></math></span> 是被评价的序列集合，<span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="T"><mrow><mi>T</mi></mrow></math></span> 是评价 token 数。</p></li><li><p>使用自然对数时取指数；若使用以 2 为底的对数，对应 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="2^{H_D(p)}"><mrow><msup><mn>2</mn><mrow><msub><mi>H</mi><mi>D</mi></msub><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo></mrow></msup></mrow></math></span>。</p></li></ul>
+<p>传统语言建模在同一数据集的 train/test split 上比较 PPL，例如 Penn Treebank、WikiText-103 和 One Billion Word。GPT-2 改变了这一实践：先在 WebText 上训练，再 zero-shot 评价多个既有数据集。图中小数据集尤其受益于大规模迁移，而不同语料的风格仍会影响结果。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_gpt2-perplexity-bc352ace.webp" alt="GPT-2 在不同数据集上的 zero-shot perplexity 与专门训练模型的对比" width="1800" height="417" loading="lazy"><figcaption>GPT-2 在不同数据集上的 zero-shot perplexity 与专门训练模型的对比</figcaption></figure>
+<p>若真实数据分布为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="q"><mrow><mi>q</mi></mrow></math></span>，期望交叉熵可写为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="H(q)+D_{\rm KL}(q\Vert p)"><mrow><mi>H</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>+</mo><msub><mi>D</mi><mrow><mi mathvariant="normal">K</mi><mi mathvariant="normal">L</mi></mrow></msub><mo stretchy="false">(</mo><mi>q</mi><mi>‖</mi><mi>p</mi><mo stretchy="false">)</mo></mrow></math></span>，因此在 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="p=q"><mrow><mi>p</mi><mo>=</mo><mi>q</mi></mrow></math></span> 时达到最小。最小交叉熵为真实熵 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="H(q)"><mrow><mi>H</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo></mrow></math></span>，相应 PPL 为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\exp(H(q))"><mrow><mi>exp</mi><mo stretchy="false">(</mo><mi>H</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math></span>。这解释了为何一些研究者将预测分布的改善视作通用能力发展的基础。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-005-评价哪些-token"><h4>评价哪些 token</h4>
+<p>平均 PPL 给所有 token 分配权重。例如在“Stanford was founded in 1885”中，语法词和事实年份都影响得分。实际应用可能更关心年份是否正确，或回答是否完成任务，因此可进一步评价 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="p(\text{response}\mid\text{prompt})"><mrow><mi>p</mi><mo stretchy="false">(</mo><mtext>response</mtext><mo>∣</mo><mtext>prompt</mtext><mo stretchy="false">)</mo></mrow></math></span>，集中测量回答部分。</p>
+<p>不同 tokenizer 的 token 数和切分不同，跨 tokenizer 比较还需统一计量，例如转成按字符或字节归一化的负对数似然。平滑的 likelihood 指标适合研究训练与 scaling，而任务评估进一步选择我们关心的行为。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-006-cloze-和-multiple-choice"><h4>Cloze 和 multiple choice</h4>
+<p>LAMBADA 要求根据前文预测缺失词，考察模型如何利用较长上下文<sup class="course-footnote-ref" id="course-footnote-ref-12-1"><a href="#courses?lecture=lecture-12&section=course-footnote-12-1">1</a></sup>。可通过候选词的条件概率评价，保留了语言模型原生的预测接口。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_lambada-657cc6e3.webp" alt="LAMBADA 的长语境填空示例" width="1266" height="535" loading="lazy"><figcaption>LAMBADA 的长语境填空示例</figcaption></figure>
+<p>HellaSwag 则给出多个续写候选，用模型分数选择与上下文相容的后续<sup class="course-footnote-ref" id="course-footnote-ref-12-2"><a href="#courses?lecture=lecture-12&section=course-footnote-12-2">2</a></sup>。表面是常识选择题，底层可以是对候选序列的 likelihood 比较。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_hellaswag-cb10d3ea.webp" alt="HellaSwag 的场景与候选续写，展示常识选择与序列概率的联系" width="906" height="705" loading="lazy"><figcaption>HellaSwag 的场景与候选续写，展示常识选择与序列概率的联系</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-007-概率接口与生成接口"><h4>概率接口与生成接口</h4>
+<p>运行 PPL 排行榜时，提交者返回的是测试文本的 log-probability，评估依赖它确实来自归一化概率分布。生成型任务则要求返回具体回答，再由外部规则检查正确性。两类接口规定了不同的信任关系和可验证范围。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-008-本章小结"><h4>本章小结</h4>
+<p>PPL 直接评价模型分布，适合平滑地观察训练进展。条件似然和下游任务将这种评价进一步聚焦到目标行为。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-009-考试型评估-知识-难度与数据构造"><h3>考试型评估：知识、难度与数据构造</h3>
+<section class="course-source-section level-4" id="lecture-12-heading-010-mmlu-与-mmlu-pro"><h4>MMLU 与 MMLU-Pro</h4>
+<p>MMLU 收集 57 个学科的多项选择题，覆盖历史、法律、数学等知识领域<sup class="course-footnote-ref" id="course-footnote-ref-12-3"><a href="#courses?lecture=lecture-12&section=course-footnote-12-3">3</a></sup>。原始做法用 few-shot 示例规定题目和答案格式，再评价模型选择。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_mmlu-02552beb.webp" alt="MMLU 的跨学科选择题和 few-shot 评估格式" width="1659" height="705" loading="lazy"><figcaption>MMLU 的跨学科选择题和 few-shot 评估格式</figcaption></figure>
+<p>随着准确率提高，MMLU-Pro 对原数据做清理，增加候选数，并支持 chain-of-thought 作答<sup class="course-footnote-ref" id="course-footnote-ref-12-4"><a href="#courses?lecture=lecture-12&section=course-footnote-12-4">4</a></sup>。题目质量、随机猜测概率和推理预算一起改变了任务难度。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_mmlu-pro-af23001f.webp" alt="MMLU-Pro 的问题设计与更具区分度的评估结果" width="1800" height="566" loading="lazy"><figcaption>MMLU-Pro 的问题设计与更具区分度的评估结果</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-011-gpqa-专业知识与专家验证"><h4>GPQA：专业知识与专家验证</h4>
+<p>GPQA 由专业人员出题，并通过专家和非专家验证来测量难度<sup class="course-footnote-ref" id="course-footnote-ref-12-5"><a href="#courses?lecture=lecture-12&section=course-footnote-12-5">5</a></sup>。原始研究中，领域专家约 65% 正确，获得搜索条件的非专家约 34%，GPT-4 约 39%。这些数字说明其最初构造时的难度与专业性。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_gpqa-c954d6d4.webp" alt="GPQA 的出题、专家反馈与题目验证流程" width="1630" height="1278" loading="lazy"><figcaption>GPQA 的出题、专家反馈与题目验证流程</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-012-humanity-s-last-exam"><h4>Humanity's Last Exam</h4>
+<p>HLE 进一步收集多学科、包含多模态的高难问题，题型包含选择和短答<sup class="course-footnote-ref" id="course-footnote-ref-12-6"><a href="#courses?lecture=lecture-12&section=course-footnote-12-6">6</a></sup>。课程介绍的版本含约 2500 道题，覆盖大量专业主题。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_hle-examples-4302352e.webp" alt="HLE 的跨学科、多模态与短答案问题示例" width="1617" height="1674" loading="lazy"><figcaption>HLE 的跨学科、多模态与短答案问题示例</figcaption></figure>
+<p>题目经过模型过滤和多轮审核。出题者激励、专家复查与公开/保留集合的设计，共同影响数据质量和未来评价价值。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_hle-pipeline-6589c3b0.webp" alt="HLE 的问题收集、筛选和审查管线" width="1800" height="516" loading="lazy"><figcaption>HLE 的问题收集、筛选和审查管线</figcaption></figure>
+<p>结果图展示了当时模型在更高难度测试中的差距。分析这类数据时，应同时看出题分布、回答方式、工具与推理预算，以及成绩随模型进步的饱和情况。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_hle-results-95597904.webp" alt="HLE 的模型结果，展示高难测试对能力差异的区分" width="1110" height="605" loading="lazy"><figcaption>HLE 的模型结果，展示高难测试对能力差异的区分</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-013-课堂讨论-难题与真实应用"><h4>课堂讨论：难题与真实应用</h4>
+<p>选择题可以通过专业内容和相近选项变得很难；题型本身并不决定难度。另一方面，许多真实工作没有固定选项，也未必只有一个标准答案，因此考试测试需要与其他评价方式搭配。</p>
+<p>对于短答，评估管线需要解析模型回答并判定与参考答案是否等价。回答生成可以采用 CoT，最终评分则聚焦指定结果；这两个环节在实验协议中分别规定。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-014-本章小结"><h4>本章小结</h4>
+<p>考试型 benchmark 方便控制知识领域、难度和评分。数据清理、专家验证与推理条件共同决定分数的可解释性。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-015-开放式回答-人类偏好与模型评判"><h3>开放式回答：人类偏好与模型评判</h3>
+<section class="course-source-section level-4" id="lecture-12-heading-016-chatbot-arena-的成对比较"><h4>Chatbot Arena 的成对比较</h4>
+<p>面对“甜菜与山羊奶酪沙拉适合搭配什么香草”这类问题，回答有多个合理版本。Arena 让真实用户输入问题，匿名比较两个模型的回答，再选择偏好<sup class="course-footnote-ref" id="course-footnote-ref-12-7"><a href="#courses?lecture=lecture-12&section=course-footnote-12-7">7</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_arena-beets-5511ad95.webp" alt="开放式烹饪问题的回答比较，展示成对偏好数据的形成" width="1623" height="1032" loading="lazy"><figcaption>开放式烹饪问题的回答比较，展示成对偏好数据的形成</figcaption></figure>
+<p>一种 Elo 形式的胜率模型为</p>
+<figure class="course-math-display" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="P(A\succ B)=\frac1{1+10^{(E_B-E_A)/400}}."><mrow><mi>P</mi><mo stretchy="false">(</mo><mi>A</mi><mo>≻</mo><mi>B</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><msup><mn>10</mn><mrow><mo stretchy="false">(</mo><msub><mi>E</mi><mi>B</mi></msub><mo>−</mo><msub><mi>E</mi><mi>A</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mn>400</mn></mrow></msup></mrow></mfrac><mo>.</mo></mrow></math></figure>
+<ul class="course-itemize"><li><p><span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="E_A,E_B"><mrow><msub><mi>E</mi><mi>A</mi></msub><mo>,</mo><msub><mi>E</mi><mi>B</mi></msub></mrow></math></span> 是两个模型的相对评分。</p></li><li><p>通过最大化观察到的成对选择的似然，可以估计评分和不确定性。</p></li></ul>
+<p>这种设计支持不断加入新问题和新模型，也允许不同模型面对不同问题。结果反映参与者、题目分布和比较机制形成的整体偏好，其中既有内容正确性，也有表达风格、长度与迎合程度的影响。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-017-alpacaeval-与长度控制"><h4>AlpacaEval 与长度控制</h4>
+<p>AlpacaEval 使用固定 instructions，令模型 judge 比较待测回答与参考回答。它降低了人工标注成本，也使评价依赖 judge 的偏好。长度控制版本通过回归等方法减弱“更长就更好”的系统偏差<sup class="course-footnote-ref" id="course-footnote-ref-12-8"><a href="#courses?lecture=lecture-12&section=course-footnote-12-8">8</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_alpacaeval-leaderboard-6ef5aff8.webp" alt="AlpacaEval 的 win rate 与长度控制后的评估方式" width="1386" height="1345" loading="lazy"><figcaption>AlpacaEval 的 win rate 与长度控制后的评估方式</figcaption></figure>
+<p>与人类 Arena 的相关性可以帮助检验自动指标是否捕捉了相似信号。相关图中每个点代表系统级结果；模型层面的排序一致性与单条回答上的评判一致性是不同统计层次。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_chat_correlations_no_ae-2304b975.webp" alt="自动偏好评估与人类比较之间的系统级相关性" width="1800" height="638" loading="lazy"><figcaption>自动偏好评估与人类比较之间的系统级相关性</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-018-wildbench-把偏好任务具体化"><h4>WildBench：把偏好任务具体化</h4>
+<p>WildBench 从真实使用中收集问题，并为每个问题建立针对性的 checklist<sup class="course-footnote-ref" id="course-footnote-ref-12-9"><a href="#courses?lecture=lecture-12&section=course-footnote-12-9">9</a></sup>。例如，一个回答要满足哪些事实、格式或约束，可以分项判断，再汇总比较。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_wildbench-e5182def.webp" alt="WildBench 的真实问题与 task-specific checklist 评价" width="1800" height="736" loading="lazy"><figcaption>WildBench 的真实问题与 task-specific checklist 评价</figcaption></figure>
+<p>Rubric 给 judge 更明确的目标，也方便人类复查错误。课程由此强调，把“回答好不好”拆成具体标准，是提高开放式评价稳定性的重要方法。实际分析可比较多种 judge 和人工结果，观察结论是否一致。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-019-本章小结"><h4>本章小结</h4>
+<p>成对比较提供较细的相对信号，checklist 明确判断标准，长度控制缓解风格偏差。人类和模型 judge 都需要被视作评估系统的一部分。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-020-agent-评估-模型与执行环境共同完成任务"><h3>Agent 评估：模型与执行环境共同完成任务</h3>
+<p>Agent 由模型、工具接口和 scaffold 组成。Scaffold 决定何时调用模型、如何保存状态、怎样执行工具以及如何处理反馈，因此同一个模型也可能在不同 agent 框架中取得不同结果。</p>
+<section class="course-source-section level-4" id="lecture-12-heading-021-swe-bench-代码仓库与测试反馈"><h4>SWE-bench：代码仓库与测试反馈</h4>
+<p>SWE-bench 提供仓库状态和 GitHub issue，要求生成修复 patch，并通过测试验证<sup class="course-footnote-ref" id="course-footnote-ref-12-10"><a href="#courses?lecture=lecture-12&section=course-footnote-12-10">10</a></sup>。理想测试既覆盖原先失败的功能，也检查修复后已有功能仍正常。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_swebench-fb8e563c.webp" alt="仓库、issue、代码上下文、patch 与测试组成的 SWE-bench 任务" width="1800" height="864" loading="lazy"><figcaption>仓库、issue、代码上下文、patch 与测试组成的 SWE-bench 任务</figcaption></figure>
+<p>这种评分能直接观察执行结果，但同时依赖任务是否可复现、测试是否充分、依赖是否安装正确。Verified 等数据清理工作也围绕这些环节展开。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-022-terminal-bench-统一终端环境"><h4>Terminal-Bench：统一终端环境</h4>
+<p>Terminal-Bench 把环境设为通用终端，通过文件、命令和程序完成真实任务<sup class="course-footnote-ref" id="course-footnote-ref-12-11"><a href="#courses?lecture=lecture-12&section=course-footnote-12-11">11</a></sup>。课程介绍的 2.0 版本包含 89 项任务。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_terminal-bench-fa967859.webp" alt="通过终端执行的多种真实工作任务" width="1353" height="453" loading="lazy"><figcaption>通过终端执行的多种真实工作任务</figcaption></figure>
+<p>人类时间估计帮助理解难度：专家和初级人员完成同一任务的时间可能不同，有些任务需要小时甚至更久的工作。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_terminal-bench-human-time-0b91d19b.webp" alt="Terminal-Bench 中任务的人类完成时间分布" width="1620" height="208" loading="lazy"><figcaption>Terminal-Bench 中任务的人类完成时间分布</figcaption></figure>
+<p>结果表将模型和 agent 组合放在一起。比较结果时，生成预算、工具、scaffold 与终止条件均属于运行协议。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_terminal-bench-results-19e2b4b8.webp" alt="不同模型和 scaffold 组合在终端任务上的结果" width="1282" height="628" loading="lazy"><figcaption>不同模型和 scaffold 组合在终端任务上的结果</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-023-cybench-与-mle-bench"><h4>Cybench 与 MLE-bench</h4>
+<p>Cybench 使用受控的 CTF 环境评价网络安全任务能力<sup class="course-footnote-ref" id="course-footnote-ref-12-12"><a href="#courses?lecture=lecture-12&section=course-footnote-12-12">12</a></sup>。数据集中的 first-solve time 提供了任务难度的一个参考。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_cybench-15ef8b3f.webp" alt="Cybench 的任务环境和评价目标" width="1597" height="841" loading="lazy"><figcaption>Cybench 的任务环境和评价目标</figcaption></figure>
+<p>Agent 需要在环境中观察、规划和使用工具，任务还可分成中间子目标，帮助定位模型在复杂流程中的进展。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_cybench-agent-e52ca7d7.webp" alt="Cybench 的 agent 运行方式与子任务结构" width="1562" height="938" loading="lazy"><figcaption>Cybench 的 agent 运行方式与子任务结构</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_cybench-results-d16abf2b.webp" alt="Cybench 中不同模型的完整任务和子任务表现" width="974" height="1003" loading="lazy"><figcaption>Cybench 中不同模型的完整任务和子任务表现</figcaption></figure>
+<p>MLE-bench 则使用 Kaggle 竞赛，要求模型处理数据、训练预测器并生成满足约束的结果<sup class="course-footnote-ref" id="course-footnote-ref-12-13"><a href="#courses?lecture=lecture-12&section=course-footnote-12-13">13</a></sup>。课程介绍的集合包含 75 项竞赛，覆盖完整机器学习工程流程。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_mlebench-f723cd22.webp" alt="MLE-bench 的竞赛任务、训练流程与评分组织" width="1379" height="460" loading="lazy"><figcaption>MLE-bench 的竞赛任务、训练流程与评分组织</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_mlebench-results-1c27d199.webp" alt="不同模型和运行方式在机器学习工程任务上的结果" width="952" height="605" loading="lazy"><figcaption>不同模型和运行方式在机器学习工程任务上的结果</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-024-scaffold-是显式实验变量"><h4>Scaffold 是显式实验变量</h4>
+<p>计划清单、分层任务处理、文件记忆和上下文组织都能改变 agent 的工作方式。它们影响长任务的状态保持和错误恢复，也增加系统层面的设计空间。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_overview-191bbb74.webp" alt="规划、状态管理与上下文组织构成的 agent scaffold" width="1548" height="1114" loading="lazy"><figcaption>规划、状态管理与上下文组织构成的 agent scaffold</figcaption></figure>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-025-本章小结"><h4>本章小结</h4>
+<p>Agent benchmark 将评估从回答文本推进到环境中的任务完成。模型、scaffold、工具和预算共同构成被测系统。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-026-arc-从静态规则归纳到交互推理"><h3>ARC：从静态规则归纳到交互推理</h3>
+<p>ARC 用少量输入输出网格示例描述一个新规则，要求将规则应用于新输入。每个任务的局部规则不同，目标是减少大规模专业知识对评价的主导。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_arc-task-grids-61be0b52.webp" alt="ARC-AGI-1 的网格变换与少样本规则归纳任务" width="1398" height="243" loading="lazy"><figcaption>ARC-AGI-1 的网格变换与少样本规则归纳任务</figcaption></figure>
+<p>ARC-AGI-2 增加了多步规则组合等难度，需要同时识别对象、关系和操作顺序。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_arc-agi-2-unsolved-1-25dc69ba.webp" alt="ARC-AGI-2 的多步骤网格规则示例" width="1286" height="611" loading="lazy"><figcaption>ARC-AGI-2 的多步骤网格规则示例</figcaption></figure>
+<p>结果图将模型进展与计算条件联系起来。更长推理或搜索可能提高得分，因此任务能力和求解成本应共同报告。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_arc-agi-results-bf6b8228.webp" alt="ARC 系列中不同模型及计算方式的结果变化" width="1279" height="716" loading="lazy"><figcaption>ARC 系列中不同模型及计算方式的结果变化</figcaption></figure>
+<p>课程还介绍了 2026 年春发布的 ARC-AGI-3 交互环境：系统通过行动获取反馈，逐步发现环境规则<sup class="course-footnote-ref" id="course-footnote-ref-12-14"><a href="#courses?lecture=lecture-12&section=course-footnote-12-14">14</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_arc-agi-3-1058af69.webp" alt="ARC-AGI-3 的交互式规则发现环境" width="503" height="658" loading="lazy"><figcaption>ARC-AGI-3 的交互式规则发现环境</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_arc-agi-3-results-a9163b96.webp" alt="ARC-AGI-3 中的模型与人类表现对照" width="1026" height="314" loading="lazy"><figcaption>ARC-AGI-3 中的模型与人类表现对照</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-12-heading-027-本章小结"><h4>本章小结</h4>
+<p>ARC 通过新规则归纳和交互发现，测量模型组织少量信息的能力；解题预算和先验经验仍是实验的重要组成部分。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-028-安全评估-风险分类与鲁棒性"><h3>安全评估：风险分类与鲁棒性</h3>
+<p>安全评估需要先定义关注的风险，再选择任务。HarmBench 将有害行为组织成可测集合，AIR-Bench 则从法规与组织政策出发构建风险分类和 prompts<sup class="course-footnote-ref" id="course-footnote-ref-12-15"><a href="#courses?lecture=lecture-12&section=course-footnote-12-15">15</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_air-overview-dpbbyaga-f49f84bb.webp" alt="AIR-Bench 的风险分类、测试问题与评估流程" width="1332" height="1118" loading="lazy"><figcaption>AIR-Bench 的风险分类、测试问题与评估流程</figcaption></figure>
+<p>Jailbreak 测试进一步研究安全行为在输入变化下是否稳定。课件用 GCG 研究说明，自动构造的对抗输入曾能影响多个模型，并具有一定迁移性。评估关注的是输入条件、目标行为与安全响应之间的关系。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_gcg-examples-a0e69458.webp" alt="对抗输入评估中的安全响应变化示例" width="1800" height="1136" loading="lazy"><figcaption>对抗输入评估中的安全响应变化示例</figcaption></figure>
+<p>安全还涉及幻觉、迎合、隐私、偏见和社会影响等多个维度。不同国家、应用和用户群体的目标也不同。网络安全等能力具有双重用途，因此能力测试与风险评估需要结合使用场景解释。</p>
+<section class="course-source-section level-4" id="lecture-12-heading-029-本章小结"><h4>本章小结</h4>
+<p>风险分类规定覆盖面，对抗测试检验鲁棒性，具体应用决定哪些失败后果最值得关注。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-030-realism-评估与真实工作的距离"><h3>Realism：评估与真实工作的距离</h3>
+<p>生态有效性关注测试是否接近真实使用。GDPval 从多个行业的职业任务出发，收集专业人员日常工作中的交付物与判断标准<sup class="course-footnote-ref" id="course-footnote-ref-12-16"><a href="#courses?lecture=lecture-12&section=course-footnote-12-16">16</a></sup>。课程介绍的集合覆盖 9 个行业、44 类职业。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_gdpval-159b05ba.webp" alt="GDPval 的职业覆盖与专业工作任务" width="1288" height="735" loading="lazy"><figcaption>GDPval 的职业覆盖与专业工作任务</figcaption></figure>
+<p>MedHELM 通过临床人员提出的任务评价更贴近日常工作的模型行为，课程介绍了 29 名临床人员参与整理的 121 类任务<sup class="course-footnote-ref" id="course-footnote-ref-12-17"><a href="#courses?lecture=lecture-12&section=course-footnote-12-17">17</a></sup>。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_medhelm-overview-cnd0eisy-f728a4d0.webp" alt="MedHELM 的临床任务分类与评估组织" width="1600" height="513" loading="lazy"><figcaption>MedHELM 的临床任务分类与评估组织</figcaption></figure>
+<p>Clio 使用模型分析真实交互并汇总主题，以研究人们实际如何使用 AI<sup class="course-footnote-ref" id="course-footnote-ref-12-18"><a href="#courses?lecture=lecture-12&section=course-footnote-12-18">18</a></sup>。这种真实流量研究需要同时设计隐私保护与统计汇总，才能发布有意义的使用模式。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_clio-table4-826cc8af.webp" alt="Clio 对真实用户任务分布的归纳" width="1800" height="1166" loading="lazy"><figcaption>Clio 对真实用户任务分布的归纳</figcaption></figure>
+<section class="course-source-section level-4" id="lecture-12-heading-031-本章小结"><h4>本章小结</h4>
+<p>专业任务与真实交互提高评估的现实相关性，也带来隐私、代表性和数据获取方面的要求。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-032-validity-污染-标签质量与统计可靠性"><h3>Validity：污染、标签质量与统计可靠性</h3>
+<section class="course-source-section level-4" id="lecture-12-heading-033-训练与测试的重叠"><h4>训练与测试的重叠</h4>
+<p>大模型训练语料广泛且不总公开，测试题、答案或近似版本可能出现在训练中。重叠会使成绩同时包含记忆与新任务泛化。课堂介绍的 exchangeability 方法，通过数据顺序等性质寻找污染信号。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_contamination-exchangeability-796b38fa.webp" alt="利用数据交换性和模型概率寻找训练测试污染的思路" width="1666" height="702" loading="lazy"><figcaption>利用数据交换性和模型概率寻找训练测试污染的思路</figcaption></figure>
+<p>其他办法包括报告数据重叠、创建新测试、保留私有集合，以及使用内部仓库和个人未公开文本。时间戳也需要结合复制与转载路径分析。课堂关于 GPQA、HLE 的问答最终回到同一个问题：高分是否反映了希望测量的能力。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-034-测试集自身的质量"><h4>测试集自身的质量</h4>
+<p>错误标签、歧义题和不完整测试会影响评估。Platinum 风格的数据清理展示了修正标签与问题描述后，模型结果如何变化。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_gjicxqlwkaaynds-9cdf09a7.webp" alt="对 benchmark 题目与标注进行清理的示例" width="1800" height="886" loading="lazy"><figcaption>对 benchmark 题目与标注进行清理的示例</figcaption></figure>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_gjiccgqxyaam4o1-b73db64a.webp" alt="数据质量修订对模型比较和可解释性的影响" width="1800" height="525" loading="lazy"><figcaption>数据质量修订对模型比较和可解释性的影响</figcaption></figure>
+<p>Agent 数据还需检查初始环境、测试覆盖和评分是否真正关联任务完成。SWE-bench Verified 等工作通过人工或自动审查提高任务可复现性；轨迹检查工具则可分析得分异常时系统实际做了什么。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-035-分数的不确定性"><h4>分数的不确定性</h4>
+<p>在独立二元题目的近似下，准确率 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\hat p"><mrow><mover accent="true"><mi>p</mi><mo>^</mo></mover></mrow></math></span> 的标准误差为 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="\sqrt{\hat p(1-\hat p)/n}"><mrow><msqrt><mrow><mover accent="true"><mi>p</mi><mo>^</mo></mover><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover accent="true"><mi>p</mi><mo>^</mo></mover><mo stretchy="false">)</mo><mo>/</mo><mi>n</mi></mrow></msqrt></mrow></math></span>，其中 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="n"><mrow><mi>n</mi></mrow></math></span> 为题数。相关题目、多个随机运行和成对比较需要相应的 bootstrap 或统计设计。报告区间和运行条件，有助于区分稳定差异与采样波动。</p>
+</section>
+<section class="course-source-section level-4" id="lecture-12-heading-036-本章小结"><h4>本章小结</h4>
+<p>评估的有效性来自可信问题、可靠标签、明确的数据关系和合理的统计分析。清理 benchmark 与改进模型同样影响实验结论。</p>
+</section>
+</section>
+<section class="course-source-section level-3" id="lecture-12-heading-037-如何选择和解释评估"><h3>如何选择和解释评估</h3>
+<p>用户采购、研究能力、分析社会影响和开发模型，需要不同评估组合。选择时先写出问题：希望测什么、覆盖哪些用户或任务、对哪些错误敏感，再确定数据、工具与指标。</p>
+<p>还要明确评估对象。固定数据和计算预算比较训练方法，鼓励算法创新；让模型或 agent 使用各自的训练与工具条件，则更接近用户可获得的系统能力。NanoGPT speedrun 是前一种评估方式的例子。</p>
+<figure class="course-source-figure"><img src="./assets/courses/cs336/lecture-12/figures/official_karpathy-nanogpt-speedrun-6788c850.webp" alt="固定任务和资源约束下比较方法的 NanoGPT speedrun" width="1199" height="811" loading="lazy"><figcaption>固定任务和资源约束下比较方法的 NanoGPT speedrun</figcaption></figure>
+<p>Difficulty、realism 与 validity 构成贯穿本讲的三个维度。高难考试提高区分度，真实工作任务提高生态相关性，严格数据与评分设计提高有效性。一个清楚的实验协议要说明模型版本、prompt、工具、推理预算、数据划分与统计方法。</p>
+<section class="course-source-section level-4" id="lecture-12-heading-038-本章小结"><h4>本章小结</h4>
+<p>Evaluation 将开发目标变成测量对象，也决定后续数据应该怎样构建。下一讲的数据来源与处理，正是在这些目标之下组织训练信号。</p>
+</section>
+</section>
+<section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
+<li id="course-footnote-12-1">Paperno et al., 2016. <em>The LAMBADA Dataset: Word Prediction Requiring a Broad Discourse Context</em>. <a href="https://arxiv.org/abs/1606.06031" target="_blank" rel="noopener noreferrer">arXiv:1606.06031</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-2">Zellers et al., 2019. <em>HellaSwag: Can a Machine Really Finish Your Sentence?</em> <a href="https://arxiv.org/abs/1905.07830" target="_blank" rel="noopener noreferrer">arXiv:1905.07830</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-2" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-3">Hendrycks et al., 2021. <em>Measuring Massive Multitask Language Understanding</em>. ICLR 2021. <a href="https://arxiv.org/abs/2009.03300" target="_blank" rel="noopener noreferrer">arXiv:2009.03300</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-3" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-4">Wang et al., 2024. <em>MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark</em>. <a href="https://arxiv.org/abs/2406.01574" target="_blank" rel="noopener noreferrer">arXiv:2406.01574</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-4" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-5">Rein et al., 2023. <em>GPQA: A Graduate-Level Google-Proof Q&amp;A Benchmark</em>. <a href="https://arxiv.org/abs/2311.12022" target="_blank" rel="noopener noreferrer">arXiv:2311.12022</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-5" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-6">Phan et al., 2025. <em>Humanity's Last Exam</em>. <a href="https://arxiv.org/abs/2501.14249" target="_blank" rel="noopener noreferrer">arXiv:2501.14249</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-6" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-7">Chiang et al., 2024. <em>Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference</em>. <a href="https://arxiv.org/abs/2403.04132" target="_blank" rel="noopener noreferrer">arXiv:2403.04132</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-7" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-8">Dubois et al., 2024. <em>Length-Controlled AlpacaEval: A Simple Way to Debias Automatic Evaluators</em>. <a href="https://arxiv.org/abs/2404.04475" target="_blank" rel="noopener noreferrer">arXiv:2404.04475</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-8" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-9">Lin et al., 2024. <em>WildBench: Benchmarking LLMs with Challenging Tasks from Real Users in the Wild</em>. <a href="https://arxiv.org/abs/2406.04770" target="_blank" rel="noopener noreferrer">arXiv:2406.04770</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-9" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-10">Jimenez et al., 2024. <em>SWE-bench: Can Language Models Resolve Real-World GitHub Issues?</em> ICLR 2024. <a href="https://arxiv.org/abs/2310.06770" target="_blank" rel="noopener noreferrer">arXiv:2310.06770</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-10" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-11">Merrill et al., 2026. <em>Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces</em>. <a href="https://arxiv.org/abs/2601.11868" target="_blank" rel="noopener noreferrer">arXiv:2601.11868</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-11" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-12">Zhang et al., 2024. <em>Cybench: A Framework for Evaluating Cybersecurity Capabilities and Risks of Language Models</em>. <a href="https://arxiv.org/abs/2408.08926" target="_blank" rel="noopener noreferrer">arXiv:2408.08926</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-12" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-13">Chan et al., 2024. <em>MLE-bench: Evaluating Machine Learning Agents on Machine Learning Engineering</em>. <a href="https://arxiv.org/abs/2410.07095" target="_blank" rel="noopener noreferrer">arXiv:2410.07095</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-13" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-14">ARC Prize, 2026. <em>ARC-AGI-3 Technical Report</em>. <a href="https://arcprize.org/media/ARC_AGI_3_Technical_Report.pdf" target="_blank" rel="noopener noreferrer">官方技术报告</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-14" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-15">Zeng et al., 2024. <em>AIR-Bench 2024: A Safety Benchmark Based on Risk Categories from Regulations and Policies</em>. <a href="https://arxiv.org/abs/2407.17436" target="_blank" rel="noopener noreferrer">arXiv:2407.17436</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-15" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-16">OpenAI, 2025. <em>GDPval: Evaluating AI Model Performance on Real-World Economically Valuable Tasks</em>. <a href="https://arxiv.org/abs/2510.04374" target="_blank" rel="noopener noreferrer">arXiv:2510.04374</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-16" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-17">Stanford CRFM, 2025. <em>MedHELM: Holistic Evaluation of Large Language Models for Medical Tasks</em>. <a href="https://arxiv.org/abs/2505.23802" target="_blank" rel="noopener noreferrer">arXiv:2505.23802</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-17" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-12-18">Tamkin et al., 2024. <em>Clio: Privacy-Preserving Insights into Real-World AI Use</em>. <a href="https://arxiv.org/abs/2412.13678" target="_blank" rel="noopener noreferrer">arXiv:2412.13678</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-12&section=course-footnote-ref-12-18" aria-label="返回正文">↩</a></li>
+</ol></section>

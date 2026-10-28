@@ -9,6 +9,7 @@ const tasks = [
   [process.execPath, ['sync-courses.mjs']],
   [process.execPath, ['sync-data.mjs']],
   [process.execPath, ['scripts/check-site.mjs']],
+  [python, ['scripts/check-course-articles.py']],
 ];
 for (const [command, args] of tasks) {
   const result = spawnSync(command, args, {cwd: root, stdio: 'inherit'});

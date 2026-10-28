@@ -1,0 +1,2 @@
+-r requirements-authoring.txt
+pylatexenc==2.10

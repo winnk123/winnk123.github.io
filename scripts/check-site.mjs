@@ -15,8 +15,6 @@ const figures = json('content/paper-figures.json');
 const diagrams = json('content/diagrams.json');
 const resources = json('dist/resources.json');
 const courses = json('content/courses.json').courses;
-const courseArticles = json('content/course-articles.json');
-const courseMigration = json('dist/course-articles/cs336/index.json');
 
 function ids(items, label) {
   assert.ok(Array.isArray(items) && items.length, `${label}: expected entries`);
@@ -33,17 +31,39 @@ const resourceIds = ids(resources, 'resources');
 let assetReferences = 0;
 ids(courses, 'courses');
 let lectureCount = 0;
-assert.equal(courseArticles.courseId, courses[0]?.id, 'course articles must match course metadata');
-assert.equal(courseMigration.courseId, courses[0]?.id, 'migration must match course metadata');
-const summariesById = new Map(courseArticles.lectures.map(article => [article.lectureId, article]));
-const migratedById = new Map(courseMigration.lectures.map(article => [article.lectureId, article]));
-assert.equal(summariesById.size, courseArticles.lectures.length, 'duplicate course summary id');
-assert.equal(migratedById.size, courseMigration.lectures.length, 'duplicate migrated article id');
 const articlesById = new Map();
+let courseTopicCount = 0;
+const resourceKinds = new Set(['website', 'repository', 'video', 'slides', 'interactive', 'reading', 'assignment']);
+function courseResources(resources, context) {
+  assert.ok(Array.isArray(resources), `${context}: resources must be an array`);
+  for (const resource of resources) {
+    assert.ok(resource.label && resourceKinds.has(resource.kind), `${context}: invalid resource metadata`);
+    assert.equal(new URL(resource.url).protocol, 'https:', `${context}: public materials must use HTTPS`);
+  }
+}
 for (const course of courses) {
-  assert.ok(course.title && course.subtitle && Array.isArray(course.lectures), `${course.id}: incomplete course`);
+  assert.match(course.id, /^[a-z0-9-]+$/, 'course id must be URL-safe');
+  assert.ok(course.title && course.subtitle && course.summary && course.category && Array.isArray(course.tags) && course.provider && course.term && Array.isArray(course.lectures), `${course.id}: incomplete course`);
+  const courseArticles = json(`content/course-articles/${course.id}.json`);
+  const courseMigration = json(`dist/course-articles/${course.id}/index.json`);
+  assert.equal(courseArticles.courseId, course.id, 'course summary metadata mismatch');
+  assert.equal(courseMigration.courseId, course.id, 'course migration metadata mismatch');
+  const summariesById = new Map(courseArticles.lectures.map(article => [article.lectureId, article]));
+  const migratedById = new Map(courseMigration.lectures.map(article => [article.lectureId, article]));
+  assert.equal(summariesById.size, courseArticles.lectures.length, 'duplicate course summary id');
+  assert.equal(migratedById.size, courseMigration.lectures.length, 'duplicate migrated article id');
   ids(course.lectures, `${course.id} lectures`);
   assert.equal(course.lectures.length, courseMigration.lectures.length, 'every lecture needs a migrated article');
+  assert.equal(course.lectures.length, courseArticles.lectures.length, 'every lecture needs an introduction');
+  courseTopicCount += courseMigration.lectures.reduce((sum, article) => sum + article.toc.length, 0);
+  courseResources(course.resources, course.id);
+  const numbers = course.lectures.map(lecture => lecture.number);
+  assert.equal(new Set(numbers).size, numbers.length, `${course.id}: duplicate lecture numbers`);
+  const stageNumbers = (course.stages || []).flatMap(stage => {
+    assert.ok(stage.title && stage.summary && stage.lectures?.length, `${course.id}: incomplete learning stage`);
+    return stage.lectures;
+  });
+  assert.deepEqual([...stageNumbers].sort((a,b) => a-b), [...numbers].sort((a,b) => a-b), `${course.id}: learning stages must cover lectures exactly once`);
   for (const lecture of course.lectures) {
     assert.ok(Number.isInteger(lecture.number) && lecture.number > 0, `${lecture.id}: invalid lecture number`);
     assert.ok(lecture.title && lecture.summary && lecture.instructor, `${lecture.id}: missing lecture metadata`);
@@ -63,7 +83,8 @@ for (const course of courses) {
     const articleIds = new Set([...fragment.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
     for (const item of migration.toc) assert.ok(articleIds.has(item.id), `${lecture.id}: missing heading ${item.id}`);
     for (const match of fragment.matchAll(/\bsrc="([^"]+)"/g)) asset(match[1], lecture.id);
-    articlesById.set(lecture.id, {...summary, ...migration});
+    courseResources(lecture.resources, `${course.id}/${lecture.id}`);
+    articlesById.set(`${course.id}/${lecture.id}`, {...summary, ...migration});
     lectureCount++;
   }
 }
@@ -113,7 +134,7 @@ const same = (generated, source, label) => assert.equal(JSON.stringify(generated
 same(dataContext.ATLAS_GUIDES, guides, 'guide data');
 same(dataContext.ATLAS_EXTRA_NEWS, news, 'frontier data');
 same(dataContext.ATLAS_ROBOT_PAPERS, papers, 'robot paper data');
-same(dataContext.ATLAS_COURSES, courses.map(course => ({...course, lectures: course.lectures.map(lecture => ({...lecture, article: articlesById.get(lecture.id)}))})), 'course data');
+same(dataContext.ATLAS_COURSES, courses.map(course => ({...course, lectures: course.lectures.map(lecture => ({...lecture, article: articlesById.get(`${course.id}/${lecture.id}`)}))})), 'course data');
 same(dataContext.ATLAS_RESOURCES, resources, 'resource data');
 
 const html = read('dist/index.html');
@@ -121,5 +142,4 @@ assert.match(html, /<html\b/);
 for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) asset(match[1], 'index.html');
 const scriptFiles = [...html.matchAll(/<script\b[^>]*src=["']\.\/([^"']+)["']/g)].map(m => m[1]);
 for (const file of scriptFiles) new vm.Script(read('dist/' + file), {filename: file});
-const courseTopicCount = courseMigration.lectures.reduce((total, article) => total + article.toc.length, 0);
 console.log(`Checked ${guides.length} guides, ${lectureCount} complete native course articles, ${courseTopicCount} source headings, ${equations} guide formulas, ${assetReferences} asset references and ${scriptFiles.length} scripts.`);

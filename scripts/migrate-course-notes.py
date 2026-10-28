@@ -670,7 +670,8 @@ def main():
             parser.error(f"Required image tool not found: {command}")
 
     courses = json.loads(COURSE_DATA.read_text(encoding="utf-8"))["courses"]
-    if len(courses) != 1 or courses[0]["id"] != "cs336":
+    courses = [course for course in courses if course["id"] == "cs336"]
+    if len(courses) != 1:
         parser.error("Expected CS336 course metadata")
     lectures = courses[0]["lectures"]
     selected = set(args.lecture or [lecture["number"] for lecture in lectures])

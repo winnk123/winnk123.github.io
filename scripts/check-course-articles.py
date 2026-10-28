@@ -131,16 +131,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, help='Also compare every original text fragment/code block (requires pylatexenc).')
     args = parser.parse_args()
-    manifest = json.loads((DIST / 'course-articles/cs336/index.json').read_text())
-    metadata = json.loads((ROOT / 'content/courses.json').read_text())['courses'][0]['lectures']
-    assert {x['lectureId'] for x in manifest['lectures']} == {x['id'] for x in metadata}, 'lecture coverage mismatch'
+    courses = json.loads((ROOT / 'content/courses.json').read_text())['courses']
+    entries = []
+    for course in courses:
+        manifest = json.loads((DIST / f'course-articles/{course["id"]}/index.json').read_text())
+        assert manifest['courseId'] == course['id'], 'course manifest mismatch'
+        assert {x['lectureId'] for x in manifest['lectures']} == {x['id'] for x in course['lectures']}, 'lecture coverage mismatch'
+        entries.extend((course['id'], entry) for entry in manifest['lectures'])
     module = None
     if args.source:
         spec = importlib.util.spec_from_file_location('course_migration', ROOT / 'scripts/migrate-course-notes.py')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     totals = Counter()
-    for entry in manifest['lectures']:
+    for course_id, entry in entries:
         identity = entry['lectureId']
         file = (DIST / entry['file'].removeprefix('./')).resolve()
         assert file.is_relative_to(DIST.resolve()), 'article path escapes dist'
@@ -163,6 +167,7 @@ def main():
         for href in parsed.links:
             if href.startswith('#'):
                 query = parse_qs(urlsplit(href[1:]).query)
+                assert query.get('course', [course_id]) == [course_id], f'{identity}: link loses course route {href}'
                 assert query.get('lecture') == [identity], f'{identity}: link loses lecture route {href}'
                 target = query.get('section', [''])[0]
                 assert target in parsed.ids, f'{identity}: broken internal link {href}'
@@ -172,7 +177,7 @@ def main():
             math = ET.fromstring(match.group())
             assert math.tag == '{http://www.w3.org/1998/Math/MathML}math', f'{identity}: invalid math namespace'
             assert not any('\\' in (element.text or '') for element in math.iter()), f'{identity}: unsupported math token'
-        if module:
+        if module and course_id == 'cs336':
             number = int(identity[-2:])
             directory = module.main_source_dir(number, args.source.resolve())
             original = module.source_body(directory, number)

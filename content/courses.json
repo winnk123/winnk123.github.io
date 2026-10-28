@@ -14,7 +14,19 @@
           "title": "Overview & Tokenization",
           "summary": "从课程目标、工程尺度鸿沟与理论边界出发，建立从零理解语言模型的整体视角。",
           "instructor": "Percy Liang",
-          "date": "2026-04-14"
+          "date": "2026-04-14",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_01"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=JuoVZkPBiKk"
+            }
+          ]
         },
         {
           "id": "lecture-02",
@@ -22,7 +34,19 @@
           "title": "PyTorch & Einops",
           "summary": "从数量级估算和张量表示入手，连接 PyTorch、Einops 与语言模型组件实现。",
           "instructor": "Percy Liang",
-          "date": "2026-04-14"
+          "date": "2026-04-14",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_02"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=kuYAsz7zspQ"
+            }
+          ]
         },
         {
           "id": "lecture-03",
@@ -30,7 +54,19 @@
           "title": "Architectures",
           "summary": "围绕现代 Transformer 的共同结构，比较归一化、位置表示、激活函数与残差设计。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-04-15"
+          "date": "2026-04-15",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_03.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=lVynu4bo1rY"
+            }
+          ]
         },
         {
           "id": "lecture-04",
@@ -38,7 +74,19 @@
           "title": "Attention Alternatives & Mixture of Experts",
           "summary": "讨论长上下文与大模型的计算成本，梳理注意力替代机制和混合专家模型。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-04-15"
+          "date": "2026-04-15",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_04.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=cKSwj_qZ8Jg"
+            }
+          ]
         },
         {
           "id": "lecture-05",
@@ -46,7 +94,19 @@
           "title": "GPUs & TPUs",
           "summary": "从 GPU 执行与内存模型进入 TPU 架构，再用 Roofline 分析计算和带宽瓶颈。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-04-20"
+          "date": "2026-04-20",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_05.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=izZba4UA7iY"
+            }
+          ]
         },
         {
           "id": "lecture-06",
@@ -54,7 +114,19 @@
           "title": "Kernels, Triton & XLA",
           "summary": "从性能基准和 profiling 出发，实践 kernel 编程以及 Triton、XLA 的实现思路。",
           "instructor": "Percy Liang",
-          "date": "2026-04-28"
+          "date": "2026-04-28",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_06"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=xnDHaNUvHBg"
+            }
+          ]
         },
         {
           "id": "lecture-07",
@@ -62,7 +134,19 @@
           "title": "Parallelism I",
           "summary": "从单 GPU 扩展到多 GPU，学习集合通信、硬件互连、数据并行与张量并行。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-04-28"
+          "date": "2026-04-28",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_07"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=SzpOcwdIL0Y"
+            }
+          ]
         },
         {
           "id": "lecture-08",
@@ -70,7 +154,19 @@
           "title": "Parallelism II",
           "summary": "组合数据、张量、流水线、专家和上下文并行，并讨论 ZeRO 与 FSDP。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-04-28"
+          "date": "2026-04-28",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_08.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=6-cXp-aOmdg"
+            }
+          ]
         },
         {
           "id": "lecture-09",
@@ -78,7 +174,19 @@
           "title": "Scaling Laws",
           "summary": "分析数据规模、样本复杂度和数据混合，理解训练目标与模型规模之间的关系。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-04-30"
+          "date": "2026-04-30",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_09.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=Q15rhEWZPQ4"
+            }
+          ]
         },
         {
           "id": "lecture-10",
@@ -86,7 +194,19 @@
           "title": "Inference",
           "summary": "沿着 prefill、decode 与 KV cache 理解推理工作负载，并比较服务和压缩策略。",
           "instructor": "Percy Liang",
-          "date": "2026-05-11"
+          "date": "2026-05-11",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_10"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=EfM546A79aM"
+            }
+          ]
         },
         {
           "id": "lecture-11",
@@ -94,7 +214,19 @@
           "title": "Scaling Laws: Training Recipes",
           "summary": "从 scaling law 推进到训练配方，讨论参数迁移、小模型实验与 muP。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-05-19"
+          "date": "2026-05-19",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_11.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=vTfEyOyzV9E"
+            }
+          ]
         },
         {
           "id": "lecture-12",
@@ -102,7 +234,19 @@
           "title": "Evaluation",
           "summary": "把语言模型能力映射为可测指标，从 perplexity 延伸到基准、比较和评测边界。",
           "instructor": "Percy Liang",
-          "date": "2026-05-19"
+          "date": "2026-05-19",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_12"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=JpAxdTWQJxM"
+            }
+          ]
         },
         {
           "id": "lecture-13",
@@ -110,7 +254,19 @@
           "title": "Data I: Sources & Datasets",
           "summary": "梳理预训练与后训练数据的来源，理解采集、快照和数据集构建的取舍。",
           "instructor": "Percy Liang",
-          "date": "2026-05-19"
+          "date": "2026-05-19",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_13"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=-qm0ln33G24"
+            }
+          ]
         },
         {
           "id": "lecture-14",
@@ -118,7 +274,19 @@
           "title": "Data II: Processing, Mixing & Synthetic Data",
           "summary": "围绕过滤、混合与合成数据，解释网页和文档如何成为可训练的 token 序列。",
           "instructor": "Percy Liang",
-          "date": "2026-05-27"
+          "date": "2026-05-27",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_14"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=5sxHosTLPF8"
+            }
+          ]
         },
         {
           "id": "lecture-15",
@@ -126,7 +294,19 @@
           "title": "Mid-Training & Post-Training",
           "summary": "从基础模型走向可控助手，比较持续训练、监督微调与偏好优化的作用。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-05-27"
+          "date": "2026-05-27",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_15.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=2oH6PWPrYFo"
+            }
+          ]
         },
         {
           "id": "lecture-16",
@@ -134,7 +314,19 @@
           "title": "Post-Training II: RLVR",
           "summary": "从 RLHF 走向可验证奖励，分析奖励信号、策略优化与推理能力扩展。",
           "instructor": "Tatsunori (Tatsu) Hashimoto",
-          "date": "2026-05-27"
+          "date": "2026-05-27",
+          "resources": [
+            {
+              "label": "官方课件 PDF",
+              "kind": "slides",
+              "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_16.pdf"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=dIFAi87Ws4E"
+            }
+          ]
         },
         {
           "id": "lecture-17",
@@ -142,7 +334,19 @@
           "title": "Alignment & Multimodality",
           "summary": "从语言模型进入多模态学习，涵盖图文对齐、视觉表示和跨模态建模。",
           "instructor": "Percy Liang",
-          "date": "2026-06-04"
+          "date": "2026-06-04",
+          "resources": [
+            {
+              "label": "官方交互讲义",
+              "kind": "interactive",
+              "url": "https://cs336.stanford.edu/lectures/?trace=lecture_17"
+            },
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=26FtD08ZpOU"
+            }
+          ]
         },
         {
           "id": "lecture-18",
@@ -150,9 +354,102 @@
           "title": "Guest Lecture: Serving, Kernels & Full-Stack ML Systems",
           "summary": "Dan Fu 分享推理服务、请求调度、系统 kernel 与完整机器学习系统栈。",
           "instructor": "Dan Fu",
-          "date": "2026-06-05"
+          "date": "2026-06-05",
+          "resources": [
+            {
+              "label": "课程视频",
+              "kind": "video",
+              "url": "https://www.youtube.com/watch?v=9EEm4iMAF5s"
+            }
+          ],
+          "materialsNote": "暂未找到官方公开课件；可阅读完整笔记或观看课程视频。"
         }
-      ]
+      ],
+      "displayTitle": "从零构建语言模型",
+      "category": "语言模型",
+      "tags": [
+        "大模型",
+        "系统工程",
+        "训练与对齐"
+      ],
+      "resources": [
+        {
+          "label": "官方课程主页",
+          "kind": "website",
+          "url": "https://cs336.stanford.edu/",
+          "description": "课程安排、教学团队与官方公告"
+        },
+        {
+          "label": "官方讲义与课件仓库",
+          "kind": "repository",
+          "url": "https://github.com/stanford-cs336/lectures",
+          "description": "逐讲 PDF、交互讲义源码与配套材料"
+        },
+        {
+          "label": "课程视频合集",
+          "kind": "video",
+          "url": "https://www.youtube.com/playlist?list=PLoROMvodv4rMqXOcazWaTUHhq-yembLCV",
+          "description": "Stanford 官方公开视频列表"
+        }
+      ],
+      "stages": [
+        {
+          "title": "模型基础",
+          "summary": "从分词与张量进入架构设计。",
+          "lectures": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "title": "计算与系统",
+          "summary": "理解硬件、kernel 和分布式并行。",
+          "lectures": [
+            5,
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "title": "规模、推理与评估",
+          "summary": "连接计算预算、训练配方与模型表现。",
+          "lectures": [
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "title": "数据工程",
+          "summary": "从数据来源到处理、混合与合成。",
+          "lectures": [
+            13,
+            14
+          ]
+        },
+        {
+          "title": "对齐与应用",
+          "summary": "后训练、RLVR、多模态与模型服务。",
+          "lectures": [
+            15,
+            16,
+            17,
+            18
+          ]
+        }
+      ],
+      "cover": {
+        "label": "BUILD",
+        "lines": [
+          "from",
+          "scratch."
+        ],
+        "caption": "MODELS · DATA · SYSTEMS"
+      }
     }
   ]
 }

@@ -42,7 +42,7 @@ Windows 或 macOS 可安装 GitHub Desktop：https://desktop.github.com/ 。登�
 | 内容 | 编辑位置 |
 | --- | --- |
 | 知识讲解、论文精读、正文公式、读图说明 | `content/guides.json` 中对应文章的 `knowledge` |
-| 基础课程、逐讲文章与公式/配图索引 | `content/courses.json`、`content/course-articles.json`（导读）；完整正文和索引在 `dist/course-articles/cs336/`，图片在 `dist/assets/courses/cs336/` |
+| 基础课程、逐讲文章与公式/配图索引 | `content/courses.json`、`content/course-articles/cs336.json`（导读）；完整正文和索引在 `dist/course-articles/cs336/`，图片在 `dist/assets/courses/cs336/` |
 | 新增前沿条目 | `content/frontier.json` |
 | 机器人论文入口与分类 | `content/robot-papers.json` |
 | 论文原图索引、出处 | `content/paper-figures.json` |
@@ -73,6 +73,23 @@ node scripts/build-site.mjs
 图表转换需要系统工具 `pdftoppm`（Poppler）与 `convert`（ImageMagick）。可用 `--lecture 16` 只更新一讲；`--output` 只接受以 `course-articles/cs336` 结尾的站点目录，图片会放到对应 `assets/courses/cs336`。源 `CS336` 文件不会被修改。
 
 `dist/course-articles/cs336/index.json` 记录每讲目录、完整搜索文本和源内容覆盖统计。带 `--source` 的审计检查源正文片段与代码保留，以及标题、图片、重点框、表格和脚注数量。普通发布只检查提交的 HTML/索引/WebP，不依赖同级仓库、TeX 编译器、pylatexenc 或图像转换工具。
+
+## 课程总览、独立主页与公开资料
+
+- `#courses`：课程总览，按课程方向筛选或搜索；每门课程使用独立模块卡片。
+- `#courses?course=cs336`：CS336 主页，包含课程介绍、学习路线、逐讲笔记与官方资料。
+- `#courses?course=cs336&lecture=lecture-01`：单讲原生文章；旧的 `#courses?lecture=lecture-01` 和脚注深链接仍可访问。
+
+课程主页的 `resources` 与各讲 `resources` 在 `content/courses.json` 中维护。每条资源包含 `label`、`kind`、`url`，课程级资源可加 `description`。`kind` 支持 `website`、`repository`、`video`、`slides`、`interactive`、`reading`、`assignment`；缺少公开课件的讲次用 `materialsNote` 说明，不填猜测链接。CS336 的公开入口已对照 Stanford 官方课程表与课件仓库核实；第 18 讲暂不提供未公开课件链接。原始资料外链访问，不复制官方 PDF，也不改变完整笔记正文。
+
+新增课程时：
+
+1. 在 `content/courses.json` 添加唯一的课程 `id`、介绍、`category`、`tags`、`stages`、可选的 `cover` 封面文案、公开资料和逐讲元数据。`stages[].lectures` 按讲次编号覆盖课程目录。
+2. 添加 `content/course-articles/<课程 id>.json`（`courseId`、`lectures`；各讲 `lectureId`、`lead`、`takeaway`）。
+3. 放入 `dist/course-articles/<课程 id>/index.json` 和完整 HTML 正文；图像放入相应课程资产目录。索引需符合现有完整内容格式（目录、搜索文本、校验哈希及覆盖统计）。CS336 的 LaTeX 转换器仅负责 CS336，其他来源需先转换为此格式。
+4. 运行 `node scripts/build-site.mjs`。总览卡片、课程主页、搜索、目录及校验会自动读取新课程，不需要在前端添加课程分支。不同课程可以复用 `lecture-01` 等讲次 id。
+
+`node scripts/test-courses.mjs` 覆盖三层路由、旧链接、全文/阶段筛选、异步切换和双课程同步，可随构建自动执行。
 
 ## 自动发布做了什么
 

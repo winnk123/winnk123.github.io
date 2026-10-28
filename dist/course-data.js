@@ -14,6 +14,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从课程目标、工程尺度鸿沟与理论边界出发，建立从零理解语言模型的整体视角。",
         "instructor": "Percy Liang",
         "date": "2026-04-14",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_01"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=JuoVZkPBiKk"
+          }
+        ],
         "article": {
           "lectureId": "lecture-01",
           "lead": "从零理解语言模型，不是把每个底层工具重新造一遍，而是亲手构建足以解释模型行为的关键部件。本讲建立课程的尺度观，再用 tokenizer 说明文本如何成为模型的输入。",
@@ -195,6 +207,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从数量级估算和张量表示入手，连接 PyTorch、Einops 与语言模型组件实现。",
         "instructor": "Percy Liang",
         "date": "2026-04-14",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_02"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=kuYAsz7zspQ"
+          }
+        ],
         "article": {
           "lectureId": "lecture-02",
           "lead": "语言模型训练不是只有张量公式，还要算清张量占多少字节、数据怎样移动、矩阵运算受算力还是带宽限制。本讲建立后续系统分析共用的资源账本。",
@@ -411,6 +435,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "围绕现代 Transformer 的共同结构，比较归一化、位置表示、激活函数与残差设计。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-04-15",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_03.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=lVynu4bo1rY"
+          }
+        ],
         "article": {
           "lectureId": "lecture-03",
           "lead": "现代 Transformer 共享相似骨架，但归一化、前馈层和位置信息有许多变体。本讲不是罗列模型名称，而是用训练稳定性、参数效率和位置信息解释这些架构选择。",
@@ -622,6 +658,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "讨论长上下文与大模型的计算成本，梳理注意力替代机制和混合专家模型。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-04-15",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_04.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=cKSwj_qZ8Jg"
+          }
+        ],
         "article": {
           "lectureId": "lecture-04",
           "lead": "完整注意力的二次序列成本推动了线性状态、稀疏访问和专家路由等方向。本讲比较这些方法改变了什么计算，以及节省成本后引入了哪些新的限制。",
@@ -813,6 +861,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从 GPU 执行与内存模型进入 TPU 架构，再用 Roofline 分析计算和带宽瓶颈。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-04-20",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_05.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=izZba4UA7iY"
+          }
+        ],
         "article": {
           "lectureId": "lecture-05",
           "lead": "模型能否扩展，取决于算子如何落到硬件。理解 GPU 的执行层级、内存带宽和矩阵单元后，才能解释 kernel 融合、tiling 与 FlashAttention 为什么有效。",
@@ -919,6 +979,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从性能基准和 profiling 出发，实践 kernel 编程以及 Triton、XLA 的实现思路。",
         "instructor": "Percy Liang",
         "date": "2026-04-28",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_06"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=xnDHaNUvHBg"
+          }
+        ],
         "article": {
           "lectureId": "lecture-06",
           "lead": "一个快速 kernel 必须先正确、再可测、最后才谈优化。本讲介绍 benchmarking、profiling 与 Triton 编程，让性能判断建立在可重复的实测基础上。",
@@ -1000,6 +1072,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从单 GPU 扩展到多 GPU，学习集合通信、硬件互连、数据并行与张量并行。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-04-28",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_07"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=SzpOcwdIL0Y"
+          }
+        ],
         "article": {
           "lectureId": "lecture-07",
           "lead": "多 GPU 训练的瓶颈不只是单卡算力，还包括如何切分模型与数据、何时交换梯度以及互连带宽。本讲从集合通信和数据并行建立分布式训练的基本图景。",
@@ -1071,6 +1155,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "组合数据、张量、流水线、专家和上下文并行，并讨论 ZeRO 与 FSDP。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-04-28",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_08.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=6-cXp-aOmdg"
+          }
+        ],
         "article": {
           "lectureId": "lecture-08",
           "lead": "当模型状态或训练计算超过单一并行维度的能力，需要把数据、张量、流水线、专家和上下文并行组合。本讲聚焦组合并行中的状态切分与通信调度。",
@@ -1142,6 +1238,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "分析数据规模、样本复杂度和数据混合，理解训练目标与模型规模之间的关系。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-04-30",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_09.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=Q15rhEWZPQ4"
+          }
+        ],
         "article": {
           "lectureId": "lecture-09",
           "lead": "Scaling law 将模型、数据、算力和损失之间的关系变成可检验的经验模型。本讲从幂律与数据规模出发，讨论如何用有限实验指导训练决策。",
@@ -1228,6 +1336,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "沿着 prefill、decode 与 KV cache 理解推理工作负载，并比较服务和压缩策略。",
         "instructor": "Percy Liang",
         "date": "2026-05-11",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_10"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=EfM546A79aM"
+          }
+        ],
         "article": {
           "lectureId": "lecture-10",
           "lead": "推理把训练好的模型变成逐 token 服务。Prefill 与 decode 的并行度、显存访问和延迟目标不同；KV cache、批处理与模型压缩共同决定推理成本。",
@@ -1304,6 +1424,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从 scaling law 推进到训练配方，讨论参数迁移、小模型实验与 muP。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-05-19",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_11.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=vTfEyOyzV9E"
+          }
+        ],
         "article": {
           "lectureId": "lecture-11",
           "lead": "理论 scaling law 需要落成可执行的训练配方。本讲讨论如何用小模型预测大模型、如何迁移初始化和学习率，以及为什么优化器与硬件细节会改变实验结论。",
@@ -1495,6 +1627,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "把语言模型能力映射为可测指标，从 perplexity 延伸到基准、比较和评测边界。",
         "instructor": "Percy Liang",
         "date": "2026-05-19",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_12"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=JpAxdTWQJxM"
+          }
+        ],
         "article": {
           "lectureId": "lecture-12",
           "lead": "语言模型评测把“能力”变成可观察指标，但任何 benchmark 都只测到能力的一部分。本讲从 perplexity 出发，讨论基准设计、偏好评测、污染与成本。",
@@ -1721,6 +1865,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "梳理预训练与后训练数据的来源，理解采集、快照和数据集构建的取舍。",
         "instructor": "Percy Liang",
         "date": "2026-05-19",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_13"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=-qm0ln33G24"
+          }
+        ],
         "article": {
           "lectureId": "lecture-13",
           "lead": "数据决定模型可以学习到什么，也决定训练结果能否被解释。本讲从网络语料、代码和数据集构建切入，说明规模、质量、来源与可复现性之间的权衡。",
@@ -1977,6 +2133,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "围绕过滤、混合与合成数据，解释网页和文档如何成为可训练的 token 序列。",
         "instructor": "Percy Liang",
         "date": "2026-05-27",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_14"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=5sxHosTLPF8"
+          }
+        ],
         "article": {
           "lectureId": "lecture-14",
           "lead": "原始网页和文档不能直接喂给语言模型；它们必须经过抽取、规范化、过滤、去重与采样。本讲把数据处理看作一连串可评估的决策，而非清洗脚本集合。",
@@ -2173,6 +2341,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从基础模型走向可控助手，比较持续训练、监督微调与偏好优化的作用。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-05-27",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_15.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=2oH6PWPrYFo"
+          }
+        ],
         "article": {
           "lectureId": "lecture-15",
           "lead": "预训练模型拥有通用语言能力，却不一定理解指令、符合偏好或可靠地解决任务。本讲沿着 mid-training、监督微调与偏好优化，追踪基础模型如何变成助手。",
@@ -2384,6 +2564,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从 RLHF 走向可验证奖励，分析奖励信号、策略优化与推理能力扩展。",
         "instructor": "Tatsunori (Tatsu) Hashimoto",
         "date": "2026-05-27",
+        "resources": [
+          {
+            "label": "官方课件 PDF",
+            "kind": "slides",
+            "url": "https://github.com/stanford-cs336/lectures/blob/main/lecture_16.pdf"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=dIFAi87Ws4E"
+          }
+        ],
         "article": {
           "lectureId": "lecture-16",
           "lead": "RLVR 用可验证奖励训练模型在数学、代码等有明确判定标准的任务上进行多步推理。本讲先解释奖励为何可验证，再从 PPO 与 GRPO 的目标看训练过程和系统成本。",
@@ -2740,6 +2932,18 @@ globalThis.ATLAS_COURSES = [
         "summary": "从语言模型进入多模态学习，涵盖图文对齐、视觉表示和跨模态建模。",
         "instructor": "Percy Liang",
         "date": "2026-06-04",
+        "resources": [
+          {
+            "label": "官方交互讲义",
+            "kind": "interactive",
+            "url": "https://cs336.stanford.edu/lectures/?trace=lecture_17"
+          },
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=26FtD08ZpOU"
+          }
+        ],
         "article": {
           "lectureId": "lecture-17",
           "lead": "多模态模型需要把图像等非文本输入映射到 Transformer 可处理的表示。本讲从 CLIP 的图文对比学习走到 SigLIP 和 LLaVA，比较对齐、注入和指令训练的不同作用。",
@@ -2936,6 +3140,14 @@ globalThis.ATLAS_COURSES = [
         "summary": "Dan Fu 分享推理服务、请求调度、系统 kernel 与完整机器学习系统栈。",
         "instructor": "Dan Fu",
         "date": "2026-06-05",
+        "resources": [
+          {
+            "label": "课程视频",
+            "kind": "video",
+            "url": "https://www.youtube.com/watch?v=9EEm4iMAF5s"
+          }
+        ],
+        "materialsNote": "暂未找到官方公开课件；可阅读完整笔记或观看课程视频。",
         "article": {
           "lectureId": "lecture-18",
           "lead": "模型训练完成后，serving 系统要把请求、模型计算、缓存和 GPU 调度变成稳定输出。本讲从 token 生命周期走到 mega-kernel，再讨论服务约束如何启发新的循环架构。",
@@ -3070,6 +3282,91 @@ globalThis.ATLAS_COURSES = [
           "sourceCodeBlocks": 0
         }
       }
-    ]
+    ],
+    "displayTitle": "从零构建语言模型",
+    "category": "语言模型",
+    "tags": [
+      "大模型",
+      "系统工程",
+      "训练与对齐"
+    ],
+    "resources": [
+      {
+        "label": "官方课程主页",
+        "kind": "website",
+        "url": "https://cs336.stanford.edu/",
+        "description": "课程安排、教学团队与官方公告"
+      },
+      {
+        "label": "官方讲义与课件仓库",
+        "kind": "repository",
+        "url": "https://github.com/stanford-cs336/lectures",
+        "description": "逐讲 PDF、交互讲义源码与配套材料"
+      },
+      {
+        "label": "课程视频合集",
+        "kind": "video",
+        "url": "https://www.youtube.com/playlist?list=PLoROMvodv4rMqXOcazWaTUHhq-yembLCV",
+        "description": "Stanford 官方公开视频列表"
+      }
+    ],
+    "stages": [
+      {
+        "title": "模型基础",
+        "summary": "从分词与张量进入架构设计。",
+        "lectures": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      {
+        "title": "计算与系统",
+        "summary": "理解硬件、kernel 和分布式并行。",
+        "lectures": [
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "title": "规模、推理与评估",
+        "summary": "连接计算预算、训练配方与模型表现。",
+        "lectures": [
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      {
+        "title": "数据工程",
+        "summary": "从数据来源到处理、混合与合成。",
+        "lectures": [
+          13,
+          14
+        ]
+      },
+      {
+        "title": "对齐与应用",
+        "summary": "后训练、RLVR、多模态与模型服务。",
+        "lectures": [
+          15,
+          16,
+          17,
+          18
+        ]
+      }
+    ],
+    "cover": {
+      "label": "BUILD",
+      "lines": [
+        "from",
+        "scratch."
+      ],
+      "caption": "MODELS · DATA · SYSTEMS"
+    }
   }
 ];

@@ -9,6 +9,7 @@ const tasks = [
   [process.execPath, ['sync-courses.mjs']],
   [process.execPath, ['sync-data.mjs']],
   [process.execPath, ['scripts/check-site.mjs']],
+  [python, ['scripts/test-course-articles.py']],
   [python, ['scripts/check-course-articles.py']],
 ];
 for (const [command, args] of tasks) {

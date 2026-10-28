@@ -42,6 +42,8 @@ class Article(HTMLParser):
             assert attrs.get('alt'), 'image missing alternative text'
             self.images.append(attrs['src'])
         if tag == 'a':
+            # Reject ambiguous attributes even on Python versions that preserve &section.
+            assert not re.search(r'&(?![A-Za-z][A-Za-z0-9]*;|#(?:[0-9]+|[xX][0-9A-Fa-f]+);)', self.get_starttag_text()), 'unescaped ampersand in link attributes (use &amp;)'
             self.links.append(attrs.get('href', ''))
         classes = attrs.get('class', '').split()
         for name in ['course-source-callout', 'course-code-block', 'course-source-table', 'course-footnote-ref']:

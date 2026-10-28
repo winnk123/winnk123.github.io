@@ -456,7 +456,8 @@ class ArticleRenderer:
             index = len(self.footnotes) + 1
             identity = f"course-footnote-{self.lecture_number:02d}-{index}"
             ref_id = f"course-footnote-ref-{self.lecture_number:02d}-{index}"
-            route_prefix = f"#courses?lecture=lecture-{self.lecture_number:02d}&section="
+            # Escape HTML attributes so Python 3.12 does not decode &sect in &section.
+            route_prefix = escape(f"#courses?lecture=lecture-{self.lecture_number:02d}&section=", quote=True)
             body = self.render_inline(content.nodelist if isinstance(content, LatexGroupNode) else [content])
             self.footnotes.append(f'<li id="{identity}">{body}<a class="course-footnote-back" href="{route_prefix}{ref_id}" aria-label="返回正文">↩</a></li>')
             return f'<sup class="course-footnote-ref" id="{ref_id}"><a href="{route_prefix}{identity}">{index}</a></sup>', False

@@ -150,7 +150,7 @@ loss.backward()</code></pre></figure>
 <p>这两个矩阵乘法与前向乘法具有相近规模，因此反向阶段约为前向的两倍，训练总量约为前向的三倍，也就是 <span class="course-math-inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline" aria-label="6BP"><mrow><mn>6</mn><mi>B</mi><mi>P</mi></mrow></math></span> 的来源。激活函数和加法的成本通常比主要矩阵乘法低，但在低算术强度情况下仍可能成为带宽瓶颈。</p>
 </section>
 <section class="course-source-section level-4" id="lecture-02-heading-030-优化器状态"><h4>优化器状态</h4>
-<p>最简单的 SGD 使用当前梯度更新参数。Momentum 对梯度做指数移动平均，AdaGrad 累积梯度平方，RMSProp 使用梯度平方的指数移动平均，Adam 将 RMSProp 的二阶统计与 momentum 的一阶统计结合起来<sup class="course-footnote-ref" id="course-footnote-ref-02-1"><a href="#courses?lecture=lecture-02&section=course-footnote-02-1">1</a></sup>。</p>
+<p>最简单的 SGD 使用当前梯度更新参数。Momentum 对梯度做指数移动平均，AdaGrad 累积梯度平方，RMSProp 使用梯度平方的指数移动平均，Adam 将 RMSProp 的二阶统计与 momentum 的一阶统计结合起来<sup class="course-footnote-ref" id="course-footnote-ref-02-1"><a href="#courses?lecture=lecture-02&amp;section=course-footnote-02-1">1</a></sup>。</p>
 <p>以 Adam 为例，每个参数通常需要保存参数本身、梯度、一次和二次动量。即使参数用 BF16 保存，优化器状态也常用 FP32，因此显存计算不能只看模型权重的文件大小。AdamW 还会加入 decoupled weight decay；这些状态会在每个更新 step 参与计算或被读取。</p>
 </section>
 <section class="course-source-section level-4" id="lecture-02-heading-031-训练循环的资源位置"><h4>训练循环的资源位置</h4>
@@ -183,5 +183,5 @@ for layer in model.layers:
 <p>下一讲进入模型架构，资源核算会继续发挥作用：attention、MLP、归一化、位置编码和不同并行结构的选择，都需要同时解释表达能力与计算成本。</p>
 </section>
 <section class="course-footnotes" id="course-footnotes"><h3>脚注与参考资料</h3><ol>
-<li id="course-footnote-02-1">Kingma and Ba, 2014. <em>Adam: A Method for Stochastic Optimization</em>. ICLR 2015. <a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener noreferrer">arXiv:1412.6980</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-02&section=course-footnote-ref-02-1" aria-label="返回正文">↩</a></li>
+<li id="course-footnote-02-1">Kingma and Ba, 2014. <em>Adam: A Method for Stochastic Optimization</em>. ICLR 2015. <a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener noreferrer">arXiv:1412.6980</a>。<a class="course-footnote-back" href="#courses?lecture=lecture-02&amp;section=course-footnote-ref-02-1" aria-label="返回正文">↩</a></li>
 </ol></section>

@@ -6,6 +6,7 @@ const python = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 
 const tasks = [
   [python, ['scripts/render-math.py']],
   [process.execPath, ['sync-guides.mjs']],
+  [process.execPath, ['sync-courses.mjs']],
   [process.execPath, ['sync-data.mjs']],
   [process.execPath, ['scripts/check-site.mjs']],
 ];

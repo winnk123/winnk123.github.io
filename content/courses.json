@@ -1,0 +1,158 @@
+{
+  "courses": [
+    {
+      "id": "cs336",
+      "title": "CS336",
+      "subtitle": "Language Modeling from Scratch",
+      "provider": "Stanford University",
+      "term": "Spring 2026",
+      "summary": "从零构建语言模型的完整课程。课程笔记沿着模型实现、计算硬件、训练数据和后训练对齐逐步展开。",
+      "lectures": [
+        {
+          "id": "lecture-01",
+          "number": 1,
+          "title": "Overview & Tokenization",
+          "summary": "从课程目标、工程尺度鸿沟与理论边界出发，建立从零理解语言模型的整体视角。",
+          "instructor": "Percy Liang",
+          "date": "2026-04-14"
+        },
+        {
+          "id": "lecture-02",
+          "number": 2,
+          "title": "PyTorch & Einops",
+          "summary": "从数量级估算和张量表示入手，连接 PyTorch、Einops 与语言模型组件实现。",
+          "instructor": "Percy Liang",
+          "date": "2026-04-14"
+        },
+        {
+          "id": "lecture-03",
+          "number": 3,
+          "title": "Architectures",
+          "summary": "围绕现代 Transformer 的共同结构，比较归一化、位置表示、激活函数与残差设计。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-04-15"
+        },
+        {
+          "id": "lecture-04",
+          "number": 4,
+          "title": "Attention Alternatives & Mixture of Experts",
+          "summary": "讨论长上下文与大模型的计算成本，梳理注意力替代机制和混合专家模型。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-04-15"
+        },
+        {
+          "id": "lecture-05",
+          "number": 5,
+          "title": "GPUs & TPUs",
+          "summary": "从 GPU 执行与内存模型进入 TPU 架构，再用 Roofline 分析计算和带宽瓶颈。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-04-20"
+        },
+        {
+          "id": "lecture-06",
+          "number": 6,
+          "title": "Kernels, Triton & XLA",
+          "summary": "从性能基准和 profiling 出发，实践 kernel 编程以及 Triton、XLA 的实现思路。",
+          "instructor": "Percy Liang",
+          "date": "2026-04-28"
+        },
+        {
+          "id": "lecture-07",
+          "number": 7,
+          "title": "Parallelism I",
+          "summary": "从单 GPU 扩展到多 GPU，学习集合通信、硬件互连、数据并行与张量并行。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-04-28"
+        },
+        {
+          "id": "lecture-08",
+          "number": 8,
+          "title": "Parallelism II",
+          "summary": "组合数据、张量、流水线、专家和上下文并行，并讨论 ZeRO 与 FSDP。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-04-28"
+        },
+        {
+          "id": "lecture-09",
+          "number": 9,
+          "title": "Scaling Laws",
+          "summary": "分析数据规模、样本复杂度和数据混合，理解训练目标与模型规模之间的关系。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-04-30"
+        },
+        {
+          "id": "lecture-10",
+          "number": 10,
+          "title": "Inference",
+          "summary": "沿着 prefill、decode 与 KV cache 理解推理工作负载，并比较服务和压缩策略。",
+          "instructor": "Percy Liang",
+          "date": "2026-05-11"
+        },
+        {
+          "id": "lecture-11",
+          "number": 11,
+          "title": "Scaling Laws: Training Recipes",
+          "summary": "从 scaling law 推进到训练配方，讨论参数迁移、小模型实验与 muP。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-05-19"
+        },
+        {
+          "id": "lecture-12",
+          "number": 12,
+          "title": "Evaluation",
+          "summary": "把语言模型能力映射为可测指标，从 perplexity 延伸到基准、比较和评测边界。",
+          "instructor": "Percy Liang",
+          "date": "2026-05-19"
+        },
+        {
+          "id": "lecture-13",
+          "number": 13,
+          "title": "Data I: Sources & Datasets",
+          "summary": "梳理预训练与后训练数据的来源，理解采集、快照和数据集构建的取舍。",
+          "instructor": "Percy Liang",
+          "date": "2026-05-19"
+        },
+        {
+          "id": "lecture-14",
+          "number": 14,
+          "title": "Data II: Processing, Mixing & Synthetic Data",
+          "summary": "围绕过滤、混合与合成数据，解释网页和文档如何成为可训练的 token 序列。",
+          "instructor": "Percy Liang",
+          "date": "2026-05-27"
+        },
+        {
+          "id": "lecture-15",
+          "number": 15,
+          "title": "Mid-Training & Post-Training",
+          "summary": "从基础模型走向可控助手，比较持续训练、监督微调与偏好优化的作用。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-05-27"
+        },
+        {
+          "id": "lecture-16",
+          "number": 16,
+          "title": "Post-Training II: RLVR",
+          "summary": "从 RLHF 走向可验证奖励，分析奖励信号、策略优化与推理能力扩展。",
+          "instructor": "Tatsunori (Tatsu) Hashimoto",
+          "date": "2026-05-27"
+        },
+        {
+          "id": "lecture-17",
+          "number": 17,
+          "title": "Alignment & Multimodality",
+          "summary": "从语言模型进入多模态学习，涵盖图文对齐、视觉表示和跨模态建模。",
+          "instructor": "Percy Liang",
+          "date": "2026-06-04"
+        },
+        {
+          "id": "lecture-18",
+          "number": 18,
+          "title": "Guest Lecture: Serving, Kernels & Full-Stack ML Systems",
+          "summary": "Dan Fu 分享推理服务、请求调度、系统 kernel 与完整机器学习系统栈。",
+          "instructor": "Dan Fu",
+          "date": "2026-06-05"
+        }
+      ]
+    }
+  ]
+}

@@ -42,6 +42,7 @@ Windows 或 macOS 可安装 GitHub Desktop：https://desktop.github.com/ 。登�
 | 内容 | 编辑位置 |
 | --- | --- |
 | 知识讲解、论文精读、正文公式、读图说明 | `content/guides.json` 中对应文章的 `knowledge` |
+| 基础课程、逐讲文章与公式/配图索引 | `content/courses.json`、`content/course-articles.json`；课程图片位于 `dist/assets/courses/` |
 | 新增前沿条目 | `content/frontier.json` |
 | 机器人论文入口与分类 | `content/robot-papers.json` |
 | 论文原图索引、出处 | `content/paper-figures.json` |

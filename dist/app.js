@@ -63,11 +63,12 @@ function showResource(id){const r=byId[id];if(!r)return;openResource=id;const di
 function toggleBookmark(id){if(!byId[id])return;const exists=bookmarks.saved.includes(id);bookmarks.saved=exists?bookmarks.saved.filter(x=>x!==id):[...bookmarks.saved,id];persist();renderHome();renderLibrary();if(openResource===id && $('#resource-dialog').open)showResource(id);if(storageAvailable)notify(exists?'已移出书签':'已加入书签');}
 function navigate(hash){if(location.hash===hash) route();else location.hash=hash;}
 function route(){
- const [raw,query='']=location.hash.slice(1).split('?');const params=new URLSearchParams(query);const page=raw==='sources'||(raw==='library'&&params.has('saved'))?'library':['paths','library'].includes(raw)?'guides':['home','guides','guide','robot-papers','frontier','about'].includes(raw)?raw:'home';currentPage=page;
+ const [raw,query='']=location.hash.slice(1).split('?');const params=new URLSearchParams(query);const page=raw==='sources'||(raw==='library'&&params.has('saved'))?'library':['paths','library'].includes(raw)?'guides':['home','guides','guide','courses','robot-papers','frontier','about'].includes(raw)?raw:'home';currentPage=page;
  $$('.page').forEach(p=>p.hidden=p.id!==`page-${page}`);$$('[data-nav]').forEach(a=>{const inLLM=(page==='guides'&&params.get('topic')==='llm')||(page==='guide'&&globalThis.ATLAS_GUIDES.find(g=>g.id===params.get('id'))?.category==='llm');const active=a.dataset.nav===(inLLM?'llm':page==='guide'?'guides':page);a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
- const titles={home:'深度学习与机器人智能',library:'原始资料索引',guides:'知识库',guide:'核心知识','robot-papers':'机器人论文精读',frontier:'前沿观察',about:'筛选标准'};document.title=`${titles[page]} · Learning Atlas`;
+ const titles={home:'深度学习与机器人智能',library:'原始资料索引',guides:'知识库',guide:'核心知识',courses:'基础课程', 'robot-papers':'机器人论文精读',frontier:'前沿观察',about:'筛选标准'};document.title=`${titles[page]} · Learning Atlas`;
  if(page==='library'){state={...defaultState};for(const k of Object.keys(defaultState)){const v=params.get(k);if(v!==null)state[k]=typeof defaultState[k]==='boolean'?v==='true':v;} if(!['all','dl','robot','robotics','llm'].includes(state.category))state.category='all';syncControls();renderLibrary();}
  if(page==='guides')Handbook.renderIndex(params);
+ if(page==='courses')AtlasCourses.render(params);
  if(page==='robot-papers')RobotPapers.render(params);
  if(page==='guide')Handbook.renderArticle(params.get('id'));
  if(page==='frontier'){newsTopic=params.get('topic')||'all';renderFrontier();}
@@ -96,4 +97,4 @@ $('#export-bookmarks').addEventListener('click',()=>{const blob=new Blob([JSON.s
 $('#import-bookmarks').addEventListener('click',()=>$('#import-file').click());
 $('#import-file').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{if(file.size>1000000)throw new Error('文件过大，请选择本站导出的记录文件。');const imported=AtlasCore.sanitizeBookmarks(JSON.parse(await file.text()),R.map(r=>r.id));bookmarks={saved:[...new Set([...bookmarks.saved,...imported.saved])]};persist();renderHome();renderLibrary();notify(storageAvailable?'书签已合并导入':'记录已导入本页；浏览器存储不可用，请保留备份。');}catch(err){notify(err instanceof SyntaxError?'无法读取 JSON，请选择正确的导出文件。':err.message);}ev.target.value='';});
 $('#type-filter').innerHTML='<option value="all">全部类型</option>'+[...new Set(R.map(r=>r.type))].map(t=>`<option>${e(t)}</option>`).join('');
-Handbook.init();renderHome();renderLibrary();renderFrontier();window.addEventListener('hashchange',route);route();
+Handbook.init();AtlasCourses.init();renderHome();renderLibrary();renderFrontier();window.addEventListener('hashchange',route);route();

@@ -14,22 +14,25 @@
   <link rel="stylesheet" href="./research-notes.css">
   <link rel="stylesheet" href="./robot-papers.css">
   <link rel="stylesheet" href="./agent-learning.css">
+  <link rel="stylesheet" href="./courses.css">
   <script src="./data.js" defer></script>
   <script src="./guide-data.js" defer></script>
   <script src="./robot-paper-data.js" defer></script>
+  <script src="./course-data.js" defer></script>
   <script src="./core.js" defer></script>
   <script src="./visuals.js" defer></script>
   <script src="./research-notes.js" defer></script>
   <script src="./robot-papers.js" defer></script>
   <script src="./agent-learning.js" defer></script>
   <script src="./handbook.js" defer></script>
+  <script src="./courses.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">跳到内容</a>
 <header class="header">
   <a href="#home" class="brand" aria-label="Learning Atlas 首页"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 23V9l9-5 9 5v14l-9 5Z M7 9l9 5 9-5 M16 14v14 M7 16l9 5 9-5"/></svg></span><span>Learning Atlas<small>DEEP × ROBOT LEARNING</small></span></a>
-  <nav aria-label="主导航"><a href="#home" data-nav="home">概览</a><a href="#guides" data-nav="guides">知识库</a><a href="#guides?topic=llm" data-nav="llm">大模型</a><a href="#robot-papers" data-nav="robot-papers">机器人论文</a><a href="#frontier" data-nav="frontier">前沿观察<span class="nav-dot"></span></a></nav>
+  <nav aria-label="主导航"><a href="#home" data-nav="home">概览</a><a href="#guides" data-nav="guides">知识库</a><a href="#courses" data-nav="courses">基础课程</a><a href="#guides?topic=llm" data-nav="llm">大模型</a><a href="#robot-papers" data-nav="robot-papers">机器人论文</a><a href="#frontier" data-nav="frontier">前沿观察<span class="nav-dot"></span></a></nav>
   <button class="collection-button" data-action="collection"><span aria-hidden="true">☆</span> 我的书签 <span id="saved-count">0</span></button>
 </header>
 <main id="main" tabindex="-1">
@@ -74,6 +77,31 @@
   <div class="library-main"><div class="library-toolbar"><div class="search-field"><span aria-hidden="true">⌕</span><input id="library-query" type="search" aria-label="搜索资料库" placeholder="搜索标题、主题、机构或关键词…"></div><select id="sort-filter" aria-label="排序"><option value="recommended">精选顺序</option><option value="newest">年份从新到旧</option></select></div><div class="results-meta"><span id="result-count" role="status" aria-live="polite"></span><span>官方来源 · 附中文导读</span></div><div id="resource-results" class="resource-grid library-grid"></div></div></div>
 </section>
 <section id="page-guides" class="page wrap inner-page" hidden><div class="page-heading"><div class="eyebrow muted">THE KNOWLEDGE ATLAS</div><h1 id="knowledge-index-title">把核心知识串起来。</h1><p id="knowledge-index-intro">按方向理解概念、机制与联系。</p></div><div id="guide-topic-tabs" class="topic-tabs" aria-label="知识领域"></div><div class="guide-toolbar"><div class="search-field"><span aria-hidden="true">⌕</span><input id="guide-query" type="search" aria-label="搜索核心知识" placeholder="搜索知识概念：注意力、多模态、IK、标定…"></div><select id="guide-track-filter" aria-label="内容方向"><option value="all">全部内容</option><option value="foundation">基础概念</option><option value="frontier">研究机制</option></select></div><div class="knowledge-layout"><aside id="guide-directions" class="knowledge-directions" hidden><div class="toc-title">选择方向</div><div id="guide-direction-tabs"></div></aside><div class="knowledge-main"><div id="guide-count" class="guide-results-meta" role="status" aria-live="polite"></div><div id="guide-results"></div></div></div></section>
+<section id="page-courses" class="page wrap inner-page" hidden>
+  <div class="page-heading"><div class="eyebrow muted">FOUNDATION COURSES</div><h1>基础课程</h1><p>按课程组织系统笔记，从完整讲次中建立可复用的知识基础。</p></div>
+  <div class="course-breadcrumb"><span>基础课程</span><span aria-hidden="true">/</span><strong>CS336</strong><span class="course-breadcrumb-note">Stanford · Spring 2026</span></div>
+  <section class="course-overview" aria-labelledby="course-title">
+    <div><div class="eyebrow muted">LANGUAGE MODELING FROM SCRATCH</div><h2 id="course-title">CS336 · 从零构建语言模型</h2><p>沿着语言模型的构建链路，阅读从分词、架构与硬件，到数据、训练、对齐和多模态的逐讲笔记。</p></div>
+    <div class="course-total"><strong id="course-total">18</strong><span>讲笔记</span></div>
+  </section>
+  <div class="course-layout">
+    <aside class="course-directory" aria-label="CS336 课程目录">
+      <div class="course-directory-heading"><h2>课程目录</h2><span id="course-result-count" role="status" aria-live="polite"></span></div>
+      <label class="search-field course-search"><span aria-hidden="true">⌕</span><input id="course-query" type="search" aria-label="搜索 CS336 讲次" placeholder="搜索讲次或主题"></label>
+      <nav id="course-list" class="course-list" aria-label="CS336 讲次"></nav>
+    </aside>
+    <section class="course-reader" aria-label="课程文章阅读区">
+      <header class="course-reader-header">
+        <div class="eyebrow muted">STANFORD CS336 <span aria-hidden="true">/</span> LECTURE <span id="course-lecture-number">01</span></div>
+        <h2 id="course-lecture-title"></h2>
+        <p id="course-lecture-summary"></p>
+      </header>
+      <div class="course-article-toolbar"><div id="course-lecture-meta" class="course-lecture-meta"></div><div id="course-article-progress" class="course-article-progress"></div></div>
+      <div class="course-article-layout"><nav id="course-article-toc" class="course-article-toc" aria-label="本讲目录"></nav><article id="course-article-body" class="course-article-body"></article></div>
+      <nav id="course-lecture-pagination" class="course-lecture-pagination" aria-label="课程前后导航"></nav>
+    </section>
+  </div>
+</section>
 <section id="page-guide" class="page wrap" hidden><div id="guide-reader" class="guide-reader"></div></section>
 <section id="page-frontier" class="page wrap inner-page" hidden><div class="page-heading"><div class="eyebrow muted">RESEARCH FIELD NOTES · OCT 2026</div><h1>站在基础上，看向前沿。</h1><p>跟踪推理、Agent、模型架构、多模态与机器人策略的新进展。</p></div><div class="snapshot-note"><span class="status-dot"></span> 2026 年 10 月 14 日 · 研究精选与技术导读</div><div class="topic-tabs frontier-filters" aria-label="前沿领域"><button data-news-topic="all" class="active">全部</button><button data-news-topic="llm">大模型</button><button data-news-topic="embodied">具身智能</button></div><div id="frontier-articles"></div><div class="reading-lens"><div><span class="eyebrow muted">READ WITH A QUESTION</span><h2>读一篇 Robot Learning 论文，<br>带着这四个问题。</h2></div><ol><li><b>数据从哪里来？</b>机器人示范、人类视频、仿真数据，各自贡献多少？</li><li><b>泛化到哪里？</b>分别考察新物体、新场景、新任务与新机体。</li><li><b>究竟怎么评测？</b>看任务划分、样本量、失败案例与相同条件下的基线。</li><li><b>我能复现哪一部分？</b>论文、代码、权重、数据、硬件要求是否都可获取？</li></ol></div></section>
 <section id="page-robot-papers" class="page wrap inner-page" hidden>
